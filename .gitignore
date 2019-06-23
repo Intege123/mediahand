@@ -2,3 +2,4 @@ target/
 AnimeDatabase.script
 AnimeDatabase.properties
 *.iml
+out/
