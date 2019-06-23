@@ -38,6 +38,11 @@ public class MediaEntry {
         this.basePath = basePath;
     }
 
+    @Override
+    public String toString() {
+        return this.title;
+    }
+
     public String getTitle() {
         return this.title;
     }

@@ -7,6 +7,6 @@ public class RootLayoutController {
 
     public void addDirectory(ActionEvent actionEvent) {
         MediaHandApp.chooseBasePath();
-        MediaHandApp.getMediaHandAppController().fillListView();
+        MediaHandApp.getMediaHandAppController().fillTableView();
     }
 }

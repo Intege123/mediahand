@@ -60,7 +60,7 @@ public class MediaLoader {
                     String mediaTitle = dir.getParent().getFileName().toString();
                     int episodeNumber = getMediaCount(dir.getParent().toFile());
                     String mediaType = dir.getParent().getParent().getFileName().toString();
-                    String relativePath = dir.toString().substring(this.basePath.getPath().length());
+                    String relativePath = dir.getParent().toString().substring(this.basePath.getPath().length());
                     Database.getMediaRepository().create(new MediaEntry(mediaTitle, episodeNumber, mediaType,
                             WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, this.basePath));
                     break;
@@ -68,6 +68,22 @@ public class MediaLoader {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public File getEpisode(final String absolutePath, final int episode) {
+        File dir = new File(absolutePath);
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles((dir2, name) -> isMedia(name));
+            if (files != null && files.length > episode - 1) {
+                return files[episode - 1];
+            } else {
+                System.err.println("Episode " + episode + " does not exist in \"" + absolutePath + "\".");
+                throw new IllegalArgumentException();
+            }
+        } else {
+            System.err.println("\"" + absolutePath + "\" does not exist or is not a directory.");
+            throw new IllegalArgumentException();
         }
     }
 

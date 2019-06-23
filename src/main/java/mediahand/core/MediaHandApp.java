@@ -57,6 +57,18 @@ public class MediaHandApp extends Application {
         Database.printTables();
     }
 
+    private void showMediaHand() {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(MediaHandApp.class.getResource("/fxml/mediaHandApp.fxml"));
+            this.rootLayout.setCenter(loader.load());
+            MediaHandApp.mediaHandAppController = loader.getController();
+            MediaHandApp.mediaHandAppController.fillTableView();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void chooseBasePath() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File dialog = directoryChooser.showDialog(MediaHandApp.stage);
@@ -66,19 +78,11 @@ public class MediaHandApp extends Application {
         }
     }
 
-    private void showMediaHand() {
-        try {
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MediaHandApp.class.getResource("/fxml/mediaHandApp.fxml"));
-            this.rootLayout.setCenter(loader.load());
-            MediaHandApp.mediaHandAppController = loader.getController();
-            MediaHandApp.mediaHandAppController.fillListView();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static MediaHandAppController getMediaHandAppController() {
+        return MediaHandApp.mediaHandAppController;
     }
 
-    public static MediaHandAppController getMediaHandAppController() {
-        return mediaHandAppController;
+    public static MediaLoader getMediaLoader() {
+        return MediaHandApp.mediaLoader;
     }
 }
