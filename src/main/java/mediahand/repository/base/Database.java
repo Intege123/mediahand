@@ -105,7 +105,7 @@ public abstract class Database {
     public static void openMediaTable() {
         if (statement != null) {
             try {
-                statement.execute("CREATE TABLE mediaTable(Title VARCHAR(255) PRIMARY KEY, Episodes INT NOT NULL, " +
+                statement.execute("CREATE TABLE mediaTable(id INT IDENTITY PRIMARY KEY, Title VARCHAR(255) UNIQUE, Episodes INT NOT NULL, " +
                         "MediaType VARCHAR(255) NOT NULL, WatchState VARCHAR(255) NOT NULL, Rating INT, " +
                         "Path VARCHAR(255) NOT NULL, CurrentEpisode INT DEFAULT 1 NOT NULL, " +
                         "Added DATE DEFAULT SYSDATE NOT NULL, EpisodeLength INT NOT NULL, " +
@@ -131,8 +131,8 @@ public abstract class Database {
     public static void openDirTable() {
         if (statement != null) {
             try {
-                statement.execute("CREATE TABLE dirTable(id INT IDENTITY PRIMARY KEY, " +
-                        "path VARCHAR(255) NOT NULL)");
+                statement.execute("CREATE TABLE dirTable(ID INT IDENTITY PRIMARY KEY, " +
+                        "PATH VARCHAR(255) NOT NULL)");
                 System.out.println("Opened new directory table!");
             } catch (SQLException e) {
                 System.err.println(e);

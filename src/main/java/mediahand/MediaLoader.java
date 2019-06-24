@@ -61,7 +61,7 @@ public class MediaLoader {
                     int episodeNumber = getMediaCount(dir.getParent().toFile());
                     String mediaType = dir.getParent().getParent().getFileName().toString();
                     String relativePath = dir.getParent().toString().substring(this.basePath.getPath().length());
-                    Database.getMediaRepository().create(new MediaEntry(mediaTitle, episodeNumber, mediaType,
+                    Database.getMediaRepository().create(new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
                             WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, this.basePath));
                     break;
                 }

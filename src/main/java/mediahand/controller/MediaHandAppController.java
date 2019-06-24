@@ -3,9 +3,12 @@ package mediahand.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import mediahand.WatchState;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.Database;
@@ -31,6 +34,20 @@ public class MediaHandAppController {
     }
 
     public void fillTableView() {
+        TableColumn<MediaEntry, String> watchStateColumn = new TableColumn<>("Watch State");
+        watchStateColumn.setPrefWidth(150);
+        watchStateColumn.setCellValueFactory(cellData -> cellData.getValue().getWatchState());
+        watchStateColumn.setCellFactory(ComboBoxTableCell.forTableColumn(new String[]{WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()}));
+        watchStateColumn.setOnEditCommit(event -> {
+            MediaEntry mediaEntry = event.getRowValue();
+            mediaEntry.setWatchState(WatchState.valueOf(event.getNewValue()));
+            Database.getMediaRepository().update(mediaEntry);
+        });
+
+        this.mediaTableView.setEditable(true);
+
+        this.mediaTableView.getColumns().add(watchStateColumn);
+
         this.mediaEntries = FXCollections.observableArrayList(Database.getMediaRepository().findAll());
         this.mediaTableView.setItems(this.mediaEntries);
     }

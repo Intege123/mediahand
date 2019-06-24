@@ -1,11 +1,14 @@
 package mediahand.domain;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import mediahand.WatchState;
 
 import java.util.Date;
 
 public class MediaEntry {
 
+    private int id;
     private String title;
     private int episodeNumber;
     private String mediaType;
@@ -20,10 +23,11 @@ public class MediaEntry {
     private DirectoryEntry basePath;
 
     public MediaEntry(final String title, final String path, final DirectoryEntry basePath) {
-        this(title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath);
+        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath);
     }
 
-    public MediaEntry(String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath) {
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath) {
+        this.id = id;
         this.title = title;
         this.episodeNumber = episodeNumber;
         this.mediaType = mediaType;
@@ -41,6 +45,14 @@ public class MediaEntry {
     @Override
     public String toString() {
         return this.title;
+    }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -67,8 +79,8 @@ public class MediaEntry {
         this.mediaType = mediaType;
     }
 
-    public WatchState getWatchState() {
-        return this.watchState;
+    public StringProperty getWatchState() {
+        return new SimpleStringProperty(this.watchState.toString());
     }
 
     public void setWatchState(WatchState watchState) {

@@ -5,12 +5,11 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
-<AnchorPane prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.172-ea"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="mediahand.controller.MediaHandAppController">
+<?import javafx.scene.layout.FlowPane?>
+<FlowPane prefHeight="601.0" prefWidth="846.0" xmlns="http://javafx.com/javafx/8.0.172-ea"
+          xmlns:fx="http://javafx.com/fxml/1" fx:controller="mediahand.controller.MediaHandAppController">
     <children>
-        <TableView fx:id="mediaTableView" onKeyPressed="#onPlayEnter" prefHeight="600.0" prefWidth="901.0"
-                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="99.0"
-                   AnchorPane.topAnchor="0.0">
+        <TableView fx:id="mediaTableView" onKeyPressed="#onPlayEnter" prefHeight="600.0">
             <columns>
                 <TableColumn prefWidth="225.0" text="Title">
                     <cellValueFactory>
@@ -25,11 +24,6 @@
                 <TableColumn prefWidth="86.0" text="Type">
                     <cellValueFactory>
                         <PropertyValueFactory property="mediaType"/>
-                    </cellValueFactory>
-                </TableColumn>
-                <TableColumn prefWidth="132.0" text="Watchstate">
-                    <cellValueFactory>
-                        <PropertyValueFactory property="watchState"/>
                     </cellValueFactory>
                 </TableColumn>
                 <TableColumn prefWidth="66.0" text="Rating">
@@ -59,11 +53,15 @@
                 </TableColumn>
             </columns>
         </TableView>
-        <Button layoutX="925.0" layoutY="15.0" mnemonicParsing="false" onAction="#onPlayButton" prefHeight="25.0"
-                prefWidth="50.0" text="Play"/>
-        <Button layoutX="963.0" layoutY="60.0" mnemonicParsing="false" onAction="#increaseCurrentEpisode"
-                prefHeight="25.0" prefWidth="25.0" text="+"/>
-        <Button layoutX="913.0" layoutY="60.0" mnemonicParsing="false" onAction="#decreaseCurrentEpisode"
-                prefHeight="25.0" prefWidth="25.0" text="-"/>
+        <AnchorPane>
+            <children>
+                <Button layoutX="6.0" mnemonicParsing="false" onAction="#onPlayButton" prefHeight="25.0"
+                        prefWidth="64.0" text="Play"/>
+                <Button layoutX="50.0" layoutY="46.0" mnemonicParsing="false" onAction="#increaseCurrentEpisode"
+                        prefHeight="25.0" prefWidth="25.0" text="+"/>
+                <Button layoutY="46.0" mnemonicParsing="false" onAction="#decreaseCurrentEpisode" prefHeight="25.0"
+                        prefWidth="25.0" text="-"/>
+            </children>
+        </AnchorPane>
     </children>
-</AnchorPane>
+</FlowPane>
