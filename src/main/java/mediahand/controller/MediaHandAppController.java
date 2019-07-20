@@ -2,7 +2,9 @@ package mediahand.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -16,12 +18,20 @@ import mediahand.repository.base.Database;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class MediaHandAppController {
 
     public TableView mediaTableView;
+    public CheckBox showAllCheckbox;
 
-    private ObservableList<MediaEntry> mediaEntries;
+    private static ObservableList<MediaEntry> mediaEntries;
+    private static FilteredList<MediaEntry> filteredData;
+
+    public void init() {
+        addWatchStateColumn();
+        fillTableView(Database.getMediaRepository().findAll());
+    }
 
     public void onPlayEnter(KeyEvent keyEvent) {
         if (keyEvent.getCode() == KeyCode.ENTER) {
@@ -33,9 +43,10 @@ public class MediaHandAppController {
         playMedia();
     }
 
-    public void fillTableView() {
+    private void addWatchStateColumn() {
         TableColumn<MediaEntry, String> watchStateColumn = new TableColumn<>("Watch State");
-        watchStateColumn.setPrefWidth(150);
+        watchStateColumn.prefWidthProperty().bind(this.mediaTableView.widthProperty().multiply(0.15).subtract(22));
+        watchStateColumn.setMaxWidth(Integer.MAX_VALUE);
         watchStateColumn.setCellValueFactory(cellData -> cellData.getValue().getWatchState());
         watchStateColumn.setCellFactory(ComboBoxTableCell.forTableColumn(new String[]{WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()}));
         watchStateColumn.setOnEditCommit(event -> {
@@ -47,14 +58,20 @@ public class MediaHandAppController {
         this.mediaTableView.setEditable(true);
 
         this.mediaTableView.getColumns().add(watchStateColumn);
+    }
 
-        this.mediaEntries = FXCollections.observableArrayList(Database.getMediaRepository().findAll());
-        this.mediaTableView.setItems(this.mediaEntries);
+    public void fillTableView(List<MediaEntry> mediaEntries) {
+        MediaHandAppController.mediaEntries = FXCollections.observableArrayList(mediaEntries);
+
+        MediaHandAppController.filteredData = new FilteredList<>(MediaHandAppController.mediaEntries);
+        setFilteredDataPredicate();
+
+        this.mediaTableView.setItems(MediaHandAppController.filteredData);
     }
 
     private void playMedia() {
         MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null) {
+        if (selectedItem != null && selectedItem.isAvailable()) {
             Desktop desktop = Desktop.getDesktop();
             File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
             try {
@@ -67,10 +84,10 @@ public class MediaHandAppController {
 
     public void increaseCurrentEpisode(ActionEvent actionEvent) {
         MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem.getCurrentEpisode() + 1 < selectedItem.getEpisodeNumber()) {
+        if (selectedItem != null && selectedItem.getCurrentEpisode() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() + 1);
             Database.getMediaRepository().update(selectedItem);
-            this.mediaEntries.set(this.mediaEntries.indexOf(selectedItem), selectedItem);
+            triggerMediaEntryUpdate(selectedItem);
         }
     }
 
@@ -79,7 +96,27 @@ public class MediaHandAppController {
         if (selectedItem != null && selectedItem.getCurrentEpisode() > 1) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() - 1);
             Database.getMediaRepository().update(selectedItem);
-            this.mediaEntries.set(this.mediaEntries.indexOf(selectedItem), selectedItem);
+            triggerMediaEntryUpdate(selectedItem);
+        }
+    }
+
+    public static void triggerMediaEntryUpdate(MediaEntry mediaEntry) {
+        MediaHandAppController.mediaEntries.set(MediaHandAppController.mediaEntries.indexOf(mediaEntry), mediaEntry);
+    }
+
+    public void onShowAll(ActionEvent actionEvent) {
+        setFilteredDataPredicate();
+    }
+
+    public static ObservableList<MediaEntry> getMediaEntries() {
+        return MediaHandAppController.mediaEntries;
+    }
+
+    private void setFilteredDataPredicate() {
+        if (this.showAllCheckbox.isSelected()) {
+            MediaHandAppController.filteredData.setPredicate(m -> true);
+        } else {
+            MediaHandAppController.filteredData.setPredicate(MediaEntry::isAvailable);
         }
     }
 }

@@ -1,7 +1,10 @@
 package mediahand;
 
+import javafx.collections.transformation.FilteredList;
+import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
+import mediahand.repository.MediaRepository;
 import mediahand.repository.base.Database;
 
 import java.io.File;
@@ -49,26 +52,50 @@ public class MediaLoader {
         DirectoryStream<Path> stream;
 
         f = new File(path);
-        p = f.toPath();
-        try {
-            stream = Files.newDirectoryStream(p);
-            for (Path dir : stream) {
-                if (dir.toFile().isDirectory()) {
-                    // recursive execution
-                    addMedia(dir.toString());
-                } else if (getMediaCount(dir.getParent().toFile()) > 0) {
-                    String mediaTitle = dir.getParent().getFileName().toString();
-                    int episodeNumber = getMediaCount(dir.getParent().toFile());
-                    String mediaType = dir.getParent().getParent().getFileName().toString();
-                    String relativePath = dir.getParent().toString().substring(this.basePath.getPath().length());
-                    Database.getMediaRepository().create(new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                            WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, this.basePath));
-                    break;
+        if (f.exists()) {
+            p = f.toPath();
+            try {
+                stream = Files.newDirectoryStream(p);
+                for (Path dir : stream) {
+                    if (dir.toFile().isDirectory()) {
+                        // recursive execution
+                        addMedia(dir.toString());
+                    } else if (getMediaCount(dir.getParent().toFile()) > 0) {
+                        MediaEntry newMediaEntry = createTempMediaEntry(dir);
+                        MediaRepository mediaRepository = Database.getMediaRepository();
+                        FilteredList<MediaEntry> mediaEntryFilteredList = MediaHandAppController.getMediaEntries()
+                                .filtered(m -> m.getBasePath().getId() == this.basePath.getId() && m.getTitle().equals(newMediaEntry.getTitle()));
+                        if (mediaEntryFilteredList.isEmpty()) {
+                            mediaRepository.create(newMediaEntry);
+                        } else {
+                            MediaEntry mediaEntry = mediaEntryFilteredList.get(0);
+                            updateMediaEntryEpisodes(newMediaEntry, mediaRepository, mediaEntry);
+                        }
+                        break;
+                    }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
+
+    private MediaEntry createTempMediaEntry(Path dir) {
+        String mediaTitle = dir.getParent().getFileName().toString();
+        int episodeNumber = getMediaCount(dir.getParent().toFile());
+        String mediaType = dir.getParent().getParent().getFileName().toString();
+        String relativePath = dir.getParent().toString().substring(this.basePath.getPath().length());
+        return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, this.basePath, false);
+    }
+
+    private void updateMediaEntryEpisodes(MediaEntry newMediaEntry, MediaRepository mediaRepository, MediaEntry mediaEntry) {
+        mediaEntry.setEpisodeNumber(newMediaEntry.getEpisodeNumber());
+        if (mediaEntry.getCurrentEpisode() > mediaEntry.getEpisodeNumber()) {
+            mediaEntry.setCurrentEpisode(mediaEntry.getEpisodeNumber());
+        }
+        mediaRepository.update(mediaEntry);
+        MediaHandAppController.triggerMediaEntryUpdate(mediaEntry);
     }
 
     public File getEpisode(final String absolutePath, final int episode) {

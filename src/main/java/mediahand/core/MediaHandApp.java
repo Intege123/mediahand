@@ -53,8 +53,6 @@ public class MediaHandApp extends Application {
         if (Database.getBasePathRepository().findAll().size() == 0) {
             chooseBasePath();
         }
-
-        Database.printTables();
     }
 
     private void showMediaHand() {
@@ -63,19 +61,21 @@ public class MediaHandApp extends Application {
             loader.setLocation(MediaHandApp.class.getResource("/fxml/mediaHandApp.fxml"));
             this.rootLayout.setCenter(loader.load());
             MediaHandApp.mediaHandAppController = loader.getController();
-            MediaHandApp.mediaHandAppController.fillTableView();
+            mediaHandAppController.init();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void chooseBasePath() {
+    public static boolean chooseBasePath() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File dialog = directoryChooser.showDialog(MediaHandApp.stage);
 
         if (dialog != null) {
             MediaHandApp.mediaLoader.addMedia(Database.getBasePathRepository().create(new DirectoryEntry(dialog.getAbsolutePath())));
+            return true;
         }
+        return false;
     }
 
     public static MediaHandAppController getMediaHandAppController() {

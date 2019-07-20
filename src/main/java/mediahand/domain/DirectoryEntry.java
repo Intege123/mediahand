@@ -1,5 +1,7 @@
 package mediahand.domain;
 
+import java.util.Objects;
+
 public class DirectoryEntry {
 
     private int id;
@@ -28,5 +30,19 @@ public class DirectoryEntry {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DirectoryEntry that = (DirectoryEntry) o;
+        return this.id == that.id &&
+                this.path.equals(that.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.id, this.path);
     }
 }

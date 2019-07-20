@@ -5,6 +5,7 @@ import javafx.beans.property.StringProperty;
 import mediahand.WatchState;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class MediaEntry {
 
@@ -21,12 +22,13 @@ public class MediaEntry {
     private Date watchedDate;
     private int watchedCount;
     private DirectoryEntry basePath;
+    private boolean available;
 
     public MediaEntry(final String title, final String path, final DirectoryEntry basePath) {
-        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath);
+        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath, false);
     }
 
-    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath) {
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, boolean available) {
         this.id = id;
         this.title = title;
         this.episodeNumber = episodeNumber;
@@ -40,6 +42,7 @@ public class MediaEntry {
         this.watchedDate = watchedDate;
         this.watchedCount = watchedCount;
         this.basePath = basePath;
+        this.available = available;
     }
 
     @Override
@@ -151,4 +154,26 @@ public class MediaEntry {
         this.basePath = basePath;
     }
 
+    public boolean isAvailable() {
+        return this.available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MediaEntry that = (MediaEntry) o;
+        return this.title.equals(that.title) &&
+                this.path.equals(that.path) &&
+                this.basePath.equals(that.basePath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.title, this.path, this.basePath);
+    }
 }

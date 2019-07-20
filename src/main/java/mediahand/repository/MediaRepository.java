@@ -69,15 +69,12 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     "WHERE MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID AND TITLE = '" + entry.getTitle() + "'");
             if (result.next()) {
                 String dirtable_path = result.getString("dirtable_path");
-                if (new File(dirtable_path).exists()) {
-                    return new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
-                            result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
-                            result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
-                            result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
-                            result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path));
-                } else {
-                    System.err.println("\"" + dirtable_path + "\" does not exist, is not a directory or is currently not connected.");
-                }
+                boolean exists = new File(dirtable_path).exists();
+                return new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
+                        result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
+                        result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
+                        result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
+                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists);
             } else {
                 System.err.println("No entry \"" + entry.getTitle() + "\" found.");
             }
@@ -98,14 +95,13 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE, DIRTABLE WHERE MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID");
             while (result.next()) {
                 String dirtable_path = result.getString("dirtable_path");
-                if (new File(dirtable_path).exists()) {
-                    String watchstate = result.getString("WATCHSTATE");
-                    mediaEntries.add(new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
-                            result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
-                            result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
-                            result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
-                            result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path)));
-                }
+                String watchstate = result.getString("WATCHSTATE");
+                boolean exists = new File(dirtable_path).exists();
+                mediaEntries.add(new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
+                        result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
+                        result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
+                        result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
+                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists));
             }
         } catch (SQLException e) {
             e.printStackTrace();
