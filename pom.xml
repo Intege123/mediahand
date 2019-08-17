@@ -52,6 +52,11 @@
             <version>2.4.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>uk.co.caprica</groupId>
+            <artifactId>vlcj</artifactId>
+            <version>4.2.0</version>
+        </dependency>
     </dependencies>
 
 </project>

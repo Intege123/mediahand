@@ -3,19 +3,18 @@ package mediahand.repository;
 import mediahand.domain.DirectoryEntry;
 import mediahand.repository.base.BaseRepository;
 import mediahand.repository.base.Database;
+import utils.Check;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static utils.Nullcheck.checkNotNull;
-
 public class BasePathRepository implements BaseRepository<DirectoryEntry> {
 
     @Override
     public DirectoryEntry create(DirectoryEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
         try {
             DirectoryEntry directoryEntry = find(entry);
             if (directoryEntry == null) {
@@ -42,7 +41,7 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
 
     @Override
     public DirectoryEntry find(DirectoryEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
         try {
             ResultSet result = Database.getStatement().executeQuery("SELECT * FROM DIRTABLE WHERE PATH='" + entry.getPath() + "'");
             if (result.next()) {

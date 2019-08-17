@@ -5,6 +5,7 @@ import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.BaseRepository;
 import mediahand.repository.base.Database;
+import utils.Check;
 
 import java.io.File;
 import java.sql.ResultSet;
@@ -13,13 +14,11 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static utils.Nullcheck.checkNotNull;
-
 public class MediaRepository implements BaseRepository<MediaEntry> {
 
     @Override
     public MediaEntry create(MediaEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
 
         try {
             Database.getStatement().execute("INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, DIRTABLE_FK) " +
@@ -35,7 +34,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
 
     @Override
     public MediaEntry update(MediaEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
 
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
@@ -50,7 +49,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
 
     @Override
     public void remove(MediaEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
         try {
             Database.getStatement().execute("DELETE FROM mediaTable WHERE Title = '" + entry.getTitle() + "'");
         } catch (SQLException e) {
@@ -61,7 +60,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
 
     @Override
     public MediaEntry find(MediaEntry entry) {
-        checkNotNull(entry, "entry");
+        Check.notNullArgument(entry, "entry");
         try {
             ResultSet result = Database.getStatement().executeQuery("SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, " +
                     "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, " +

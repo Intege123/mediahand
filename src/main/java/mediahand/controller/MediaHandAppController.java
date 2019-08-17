@@ -14,6 +14,7 @@ import mediahand.WatchState;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.Database;
+import mediahand.vlc.JavaFXDirectRenderingScene;
 
 import java.awt.*;
 import java.io.File;
@@ -40,7 +41,7 @@ public class MediaHandAppController {
     }
 
     public void onPlayButton(ActionEvent actionEvent) {
-        playMedia();
+        playEmbeddedMedia();
     }
 
     private void addWatchStateColumn() {
@@ -67,6 +68,15 @@ public class MediaHandAppController {
         setFilteredDataPredicate();
 
         this.mediaTableView.setItems(MediaHandAppController.filteredData);
+    }
+
+    private void playEmbeddedMedia() {
+        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null && selectedItem.isAvailable()) {
+            File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
+            JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
+            javaFXDirectRenderingScene.start(MediaHandApp.getStage());
+        }
     }
 
     private void playMedia() {

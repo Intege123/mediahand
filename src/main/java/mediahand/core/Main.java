@@ -5,7 +5,7 @@ import javafx.application.Application;
 public class Main {
 
     public static void main(String[] args) {
-        Application.launch(MediaHandApp.class);
+        Application.launch(MediaHandApp.class, args);
     }
 
 }

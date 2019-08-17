@@ -21,6 +21,7 @@ public class MediaHandApp extends Application {
     private static Stage stage;
     private static MediaLoader mediaLoader;
     private static MediaHandAppController mediaHandAppController;
+    private static Scene scene;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -36,7 +37,7 @@ public class MediaHandApp extends Application {
 
     private void initRootLayout() throws IOException {
         this.rootLayout = FXMLLoader.load(getClass().getResource("/fxml/RootLayout.fxml"));
-        Scene scene = new Scene(this.rootLayout);
+        scene = new Scene(this.rootLayout);
         MediaHandApp.stage.setScene(scene);
         MediaHandApp.stage.setTitle("Media Hand");
         MediaHandApp.stage.show();
@@ -84,5 +85,13 @@ public class MediaHandApp extends Application {
 
     public static MediaLoader getMediaLoader() {
         return MediaHandApp.mediaLoader;
+    }
+
+    public static Stage getStage() {
+        return stage;
+    }
+
+    public static Scene getScene() {
+        return scene;
     }
 }
