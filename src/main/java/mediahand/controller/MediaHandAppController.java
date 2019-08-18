@@ -86,6 +86,10 @@ public class MediaHandAppController {
         sortedData.comparatorProperty().bind(this.mediaTableView.comparatorProperty());
 
         this.mediaTableView.setItems(sortedData);
+
+        TableColumn<MediaEntry, ?> mediaEntryTableTitleColumn = this.mediaTableView.getColumns().get(0);
+        mediaEntryTableTitleColumn.setSortType(TableColumn.SortType.ASCENDING);
+        this.mediaTableView.getSortOrder().add(mediaEntryTableTitleColumn);
     }
 
     private void playEmbeddedMedia() {
