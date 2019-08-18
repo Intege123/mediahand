@@ -39,7 +39,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
                     entry.getEpisodeNumber() + "', MEDIATYPE = '" + entry.getMediaType() + "', WATCHSTATE = '" + entry.getWatchState().getValue() + "', CURRENTEPISODE = '" +
-                    entry.getCurrentEpisode() + "' WHERE ID = '" + entry.getId() + "'");
+                    entry.getCurrentEpisode() + "', DIRTABLE_FK = '" + entry.getBasePath().getId() + "', PATH = '" + entry.getPath() + "' WHERE ID = '" + entry.getId() + "'");
         } catch (SQLException e) {
             System.err.println("Could not update media entry: " + entry.getTitle());
             e.printStackTrace();

@@ -13,6 +13,7 @@ import mediahand.repository.base.Database;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 public class MediaHandApp extends Application {
 
@@ -77,6 +78,13 @@ public class MediaHandApp extends Application {
             return true;
         }
         return false;
+    }
+
+    public static Optional<File> chooseMediaDirectory() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        File dialog = directoryChooser.showDialog(MediaHandApp.getStage());
+
+        return Optional.ofNullable(dialog);
     }
 
     public static MediaHandAppController getMediaHandAppController() {

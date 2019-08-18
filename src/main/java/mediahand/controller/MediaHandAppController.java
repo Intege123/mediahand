@@ -20,6 +20,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 public class MediaHandAppController {
 
@@ -73,9 +74,13 @@ public class MediaHandAppController {
     private void playEmbeddedMedia() {
         MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
-            File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
-            JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-            javaFXDirectRenderingScene.start(MediaHandApp.getStage());
+            try {
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
+                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
+                javaFXDirectRenderingScene.start(MediaHandApp.getStage());
+            } catch (IOException e) {
+                changeMediaLocation();
+            }
         }
     }
 
@@ -83,12 +88,32 @@ public class MediaHandAppController {
         MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             Desktop desktop = Desktop.getDesktop();
-            File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
             try {
-                desktop.open(file);
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
+                try {
+                    desktop.open(file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } catch (IOException e) {
-                e.printStackTrace();
+                changeMediaLocation();
             }
+        }
+    }
+
+    private void changeMediaLocation() {
+        Optional<File> directory = MediaHandApp.chooseMediaDirectory();
+        if (directory.isPresent()) {
+            MediaEntry updatedMediaEntry = MediaHandApp.getMediaLoader().createTempMediaEntry(directory.get().toPath());
+            updateMedia(updatedMediaEntry);
+        }
+    }
+
+    private void updateMedia(final MediaEntry mediaEntry) {
+        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            MediaHandApp.getMediaLoader().updateMediaEntryPath(mediaEntry, Database.getMediaRepository(), selectedItem);
+            triggerMediaEntryUpdate(selectedItem);
         }
     }
 
