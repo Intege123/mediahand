@@ -16,9 +16,10 @@
             <Button layoutY="46.0" mnemonicParsing="false" onAction="#decreaseCurrentEpisode" prefHeight="25.0"
                     prefWidth="25.0" text="-"/>
             <CheckBox fx:id="showAllCheckbox" layoutX="2.0" layoutY="100.0" mnemonicParsing="false"
-                      onAction="#onShowAll" text="Show All"/>
+                      onAction="#onFilter" text="Show All"/>
             <ComboBox fx:id="watchStateFilter" layoutX="2.0" layoutY="150.0"
-                      onAction="#onWatchStateFilter"/>
+                      onAction="#onFilter"/>
+            <TextField fx:id="titleFilter" layoutX="2.0" layoutY="200"/>
         </AnchorPane>
     </right>
     <center>

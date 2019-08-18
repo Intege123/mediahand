@@ -5,10 +5,8 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -32,10 +30,22 @@ public class MediaHandAppController {
     private static ObservableList<MediaEntry> mediaEntries;
     private static FilteredList<MediaEntry> filteredData;
     public ComboBox<String> watchStateFilter;
+    public TextField titleFilter;
 
     public void init() {
         addWatchStateColumn();
+        addWatchStateFilter();
+        addTitleFieldFilterListener();
         fillTableView(Database.getMediaRepository().findAll());
+    }
+
+    private void addTitleFieldFilterListener() {
+        this.titleFilter.textProperty().addListener((observable, oldValue, newValue) -> {
+            MediaHandAppController.filteredData.setPredicate(m -> filter(m, newValue));
+        });
+    }
+
+    private void addWatchStateFilter() {
         this.watchStateFilter.setItems(FXCollections.observableArrayList("ALL", WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
         this.watchStateFilter.getSelectionModel().selectFirst();
     }
@@ -70,8 +80,7 @@ public class MediaHandAppController {
     public void fillTableView(List<MediaEntry> mediaEntries) {
         MediaHandAppController.mediaEntries = FXCollections.observableArrayList(mediaEntries);
 
-        MediaHandAppController.filteredData = new FilteredList<>(MediaHandAppController.mediaEntries);
-        setFilteredDataPredicate();
+        MediaHandAppController.filteredData = new FilteredList<>(MediaHandAppController.mediaEntries, this::filter);
 
         SortedList<MediaEntry> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(this.mediaTableView.comparatorProperty());
@@ -118,7 +127,7 @@ public class MediaHandAppController {
     }
 
     private void updateMedia(final MediaEntry mediaEntry) {
-        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             MediaHandApp.getMediaLoader().updateMediaEntryPath(mediaEntry, Database.getMediaRepository(), selectedItem);
             triggerMediaEntryUpdate(selectedItem);
@@ -126,7 +135,7 @@ public class MediaHandAppController {
     }
 
     public void increaseCurrentEpisode(ActionEvent actionEvent) {
-        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisode() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() + 1);
             Database.getMediaRepository().update(selectedItem);
@@ -135,7 +144,7 @@ public class MediaHandAppController {
     }
 
     public void decreaseCurrentEpisode(ActionEvent actionEvent) {
-        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisode() > 1) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() - 1);
             Database.getMediaRepository().update(selectedItem);
@@ -147,23 +156,30 @@ public class MediaHandAppController {
         MediaHandAppController.mediaEntries.set(MediaHandAppController.mediaEntries.indexOf(mediaEntry), mediaEntry);
     }
 
-    public void onShowAll(ActionEvent actionEvent) {
-        setFilteredDataPredicate();
-    }
-
     public static ObservableList<MediaEntry> getMediaEntries() {
         return MediaHandAppController.mediaEntries;
     }
 
-    private void setFilteredDataPredicate() {
-        if (this.showAllCheckbox.isSelected()) {
-            MediaHandAppController.filteredData.setPredicate(m -> true);
-        } else {
-            MediaHandAppController.filteredData.setPredicate(MediaEntry::isAvailable);
-        }
+    public void onFilter(ActionEvent actionEvent) {
+        MediaHandAppController.filteredData.setPredicate(this::filter);
     }
 
-    public void onWatchStateFilter(ActionEvent actionEvent) {
-        MediaHandAppController.filteredData.setPredicate(m -> m.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem()));
+    private boolean filter(final MediaEntry mediaEntry) {
+        return filter(mediaEntry, this.titleFilter.textProperty().getValue());
+    }
+
+    private boolean filter(final MediaEntry mediaEntry, final String textFilter) {
+        if (this.showAllCheckbox.isSelected() || mediaEntry.isAvailable()) {
+            if (mediaEntry.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem())) {
+                if (textFilter == null || textFilter.isEmpty()) {
+                    return true;
+                }
+
+                String lowerCaseFilter = textFilter.toLowerCase();
+
+                return mediaEntry.getTitle().toLowerCase().contains(lowerCaseFilter);
+            }
+        }
+        return false;
     }
 }
