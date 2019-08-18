@@ -164,6 +164,10 @@ public class MediaHandAppController {
         return MediaHandAppController.mediaEntries;
     }
 
+    public MediaEntry getSelectedMediaEntry() {
+        return this.mediaTableView.getSelectionModel().getSelectedItem();
+    }
+
     public void onFilter(ActionEvent actionEvent) {
         MediaHandAppController.filteredData.setPredicate(this::filter);
     }
@@ -186,4 +190,5 @@ public class MediaHandAppController {
         }
         return false;
     }
+
 }

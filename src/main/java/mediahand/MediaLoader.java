@@ -145,7 +145,7 @@ public class MediaLoader {
                 return files[episode - 1];
             } else {
                 System.err.println("Episode " + episode + " does not exist in \"" + absolutePath + "\".");
-                throw new IllegalArgumentException();
+                throw new IOException("Episode " + episode + " does not exist in \"" + absolutePath + "\".");
             }
         } else {
             System.err.println("\"" + absolutePath + "\" does not exist or is not a directory.");
