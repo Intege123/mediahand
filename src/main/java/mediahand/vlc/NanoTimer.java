@@ -119,14 +119,8 @@ public abstract class NanoTimer extends ScheduledService<Void> {
         }
     }
 
-    /**
-     *
-     */
     protected abstract void onSucceeded();
 
-    /**
-     *
-     */
     protected void onFailed() {
     }
 }

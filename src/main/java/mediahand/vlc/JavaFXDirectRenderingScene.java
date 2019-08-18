@@ -6,18 +6,23 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Slider;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import uk.co.caprica.vlcj.player.base.TrackDescription;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.videosurface.CallbackVideoSurface;
@@ -30,6 +35,8 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 
 public class JavaFXDirectRenderingScene {
@@ -53,6 +60,8 @@ public class JavaFXDirectRenderingScene {
      */
     private final Canvas canvas;
 
+    private Timer timer = new Timer();
+
     private ContextMenu contextMenu;
 
     private List<TrackDescription> trackDescriptions;
@@ -67,7 +76,7 @@ public class JavaFXDirectRenderingScene {
      */
     private final WritablePixelFormat<ByteBuffer> pixelFormat;
 
-    private final BorderPane borderPane;
+    private StackPane stackPane;
 
     private final MediaPlayerFactory mediaPlayerFactory;
 
@@ -80,13 +89,21 @@ public class JavaFXDirectRenderingScene {
 
     private WritableImage img;
 
+    private Slider mediaTimeSlider;
+
+    private BorderPane controlPane;
+
+    private final long delay = 1000;
+
+    private Scene scene;
+
     public JavaFXDirectRenderingScene(final File videoFile) {
         this.videoFile = videoFile.getAbsolutePath();
 
         this.canvas = new Canvas();
 
         this.canvas.setFocusTraversable(true);
-        this.canvas.setOnKeyReleased(event -> {
+        this.canvas.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
                 stop();
                 MediaHandApp.getStage().setScene(MediaHandApp.getScene());
@@ -94,6 +111,8 @@ public class JavaFXDirectRenderingScene {
                 this.mediaPlayer.controls().pause();
             } else if (event.getCode() == KeyCode.ENTER) {
                 this.mediaPlayer.controls().skipTime(80000);
+            } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
+                this.stage.setFullScreen(true);
             }
         });
 
@@ -105,12 +124,15 @@ public class JavaFXDirectRenderingScene {
 
         this.mediaPlayer.videoSurface().set(new JavaFXDirectRenderingScene.JavaFxVideoSurface());
 
-        this.borderPane = new BorderPane();
-        this.borderPane.setCenter(this.canvas);
-        this.borderPane.setStyle("-fx-background-color: rgb(0, 0, 0);");
+        this.stackPane = new StackPane();
+        this.controlPane = new BorderPane();
 
-        this.canvas.widthProperty().bind(this.borderPane.widthProperty());
-        this.canvas.heightProperty().bind(this.borderPane.heightProperty());
+        this.stackPane.getChildren().add(0, this.canvas);
+        this.stackPane.getChildren().add(1, this.controlPane);
+        this.stackPane.setStyle("-fx-background-color: rgb(0, 0, 0);");
+
+        this.canvas.widthProperty().bind(this.stackPane.widthProperty());
+        this.canvas.heightProperty().bind(this.stackPane.heightProperty());
 
         addContextMenuListeners();
     }
@@ -118,20 +140,71 @@ public class JavaFXDirectRenderingScene {
     public void start(Stage primaryStage) {
         this.stage = primaryStage;
 
+        this.stage.setOnCloseRequest(event -> stop());
+
         this.stage.setTitle("vlcj JavaFX Direct Rendering");
 
-        primaryStage.setScene(new Scene(this.borderPane, Color.BLACK));
+        this.stage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+
+        this.scene = new Scene(this.stackPane, Color.BLACK);
+        primaryStage.setScene(this.scene);
         primaryStage.show();
 
         this.mediaPlayer.controls().setRepeat(true);
 
         this.mediaPlayer.media().play(this.videoFile);
 
-        startTimer();
+        if (startTimer()) {
+            onMediaLoaded();
+        }
+    }
+
+    private void onMediaLoaded() {
+        this.trackDescriptions = this.mediaPlayer.audio().trackDescriptions();
+        this.contextMenu = buildContextMenu();
+        this.mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void timeChanged(MediaPlayer mediaPlayer, long newTime) {
+                if (!JavaFXDirectRenderingScene.this.mediaTimeSlider.isPressed()) {
+                    JavaFXDirectRenderingScene.this.mediaTimeSlider.setValue(newTime / 60000.0);
+                }
+            }
+        });
+        double mediaDuration = this.mediaPlayer.media().info().duration() / 60000.0;
+        this.mediaTimeSlider = new Slider(0, mediaDuration, 0);
+        this.mediaTimeSlider.setMajorTickUnit(mediaDuration);
+        this.mediaTimeSlider.setShowTickLabels(true);
+        this.mediaTimeSlider.setShowTickMarks(true);
+        this.mediaTimeSlider.setOnMouseClicked(event -> this.mediaPlayer.controls().setTime((long) (this.mediaTimeSlider.getValue() * 60000)));
+
+        Slider volumeSlider = new Slider(0, 100, 50);
+        this.mediaPlayer.audio().setVolume((int) volumeSlider.getValue());
+        volumeSlider.setOnMouseClicked(event -> this.mediaPlayer.audio().setVolume((int) volumeSlider.getValue()));
+
+        BorderPane sliderPane = new BorderPane(this.mediaTimeSlider);
+        sliderPane.setRight(volumeSlider);
+
+        this.stackPane.setOnMouseMoved(event -> {
+            this.controlPane.setVisible(true);
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    JavaFXDirectRenderingScene.this.controlPane.setVisible(false);
+                }
+            };
+            this.timer.cancel();
+            if (sliderPane.sceneToLocal(event.getSceneX(), event.getSceneY()).getY() < -10) {
+                this.timer = new Timer();
+                this.timer.schedule(task, this.delay);
+            }
+        });
+
+        this.controlPane.setBottom(sliderPane);
     }
 
     public void stop() {
         stopTimer();
+        this.timer.cancel();
 
         this.mediaPlayer.controls().stop();
         this.mediaPlayer.release();
@@ -144,18 +217,13 @@ public class JavaFXDirectRenderingScene {
     }
 
     private void addShowContextMenuListener() {
-        this.canvas.setOnContextMenuRequested(event -> {
-            if (this.trackDescriptions == null || this.trackDescriptions.isEmpty()) {
-                this.trackDescriptions = this.mediaPlayer.audio().trackDescriptions();
-                this.contextMenu = buildContextMenu();
-            }
-
-            this.contextMenu.show(this.canvas, event.getScreenX(), event.getScreenY());
+        this.stackPane.setOnContextMenuRequested(event -> {
+            this.contextMenu.show(this.stackPane, event.getScreenX(), event.getScreenY());
         });
     }
 
     private void addHideContextMenuListener() {
-        this.canvas.setOnMouseClicked(event -> {
+        this.stackPane.setOnMouseClicked(event -> {
             if (this.contextMenu != null) {
                 this.contextMenu.hide();
             }
@@ -271,8 +339,17 @@ public class JavaFXDirectRenderingScene {
         }
     }
 
-    private void startTimer() {
+    private boolean startTimer() {
         this.nanoTimer.start();
+        // wait for the media to load, because the api call to vlc is async
+        while (this.mediaPlayer.media().info().duration() == -1 || this.mediaPlayer.audio().volume() == -1) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
     }
 
     private void stopTimer() {
