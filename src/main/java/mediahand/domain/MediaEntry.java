@@ -45,11 +45,6 @@ public class MediaEntry {
         this.available = available;
     }
 
-    @Override
-    public String toString() {
-        return this.title;
-    }
-
     public int getId() {
         return this.id;
     }
@@ -164,6 +159,11 @@ public class MediaEntry {
 
     public boolean filterByWatchState(final String watchState) {
         return watchState.equals("ALL") || watchState.equals(this.watchState.toString());
+    }
+
+    @Override
+    public String toString() {
+        return this.title;
     }
 
     @Override

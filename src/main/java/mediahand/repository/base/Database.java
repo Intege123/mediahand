@@ -2,6 +2,7 @@ package mediahand.repository.base;
 
 import mediahand.repository.BasePathRepository;
 import mediahand.repository.MediaRepository;
+import mediahand.repository.SettingsRepository;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -23,6 +24,7 @@ public abstract class Database {
 
     private static BasePathRepository basePathRepository;
     private static MediaRepository mediaRepository;
+    private static SettingsRepository settingsRepository;
 
     /**
      * Connects to the specified database and creates or opens the mediaTable.
@@ -45,9 +47,11 @@ public abstract class Database {
 
         openDirTable();
         openMediaTable();
+        openSettingsTable();
 
         basePathRepository = new BasePathRepository();
         mediaRepository = new MediaRepository();
+        settingsRepository = new SettingsRepository();
     }
 
     /**
@@ -112,7 +116,6 @@ public abstract class Database {
                         "WatchedDate DATE, WatchNumber INT, dirtable_fk INT NOT NULL, FOREIGN KEY (dirtable_fk) REFERENCES DIRTABLE(id))");
                 System.out.println("Opened new media table!");
             } catch (SQLException e) {
-                System.err.println(e);
                 try {
                     statement.execute("TABLE mediaTable");
                 } catch (SQLException e2) {
@@ -135,9 +138,25 @@ public abstract class Database {
                         "PATH VARCHAR(255) NOT NULL)");
                 System.out.println("Opened new directory table!");
             } catch (SQLException e) {
-                System.err.println(e);
                 try {
                     statement.execute("TABLE dirTable");
+                } catch (SQLException e2) {
+                    System.err.println("Could not open dirTable!");
+                    e2.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void openSettingsTable() {
+        if (statement != null) {
+            try {
+                statement.execute("CREATE TABLE settingsTable(ID INT IDENTITY PRIMARY KEY, PROFILE VARCHAR(255) NOT NULL UNIQUE, " +
+                        "WIDTH INT NOT NULL, HEIGHT INT NOT NULL)");
+                System.out.println("Opened new settings table!");
+            } catch (SQLException e) {
+                try {
+                    statement.execute("TABLE settingsTable");
                 } catch (SQLException e2) {
                     System.err.println("Could not open dirTable!");
                     e2.printStackTrace();
@@ -150,6 +169,7 @@ public abstract class Database {
         try {
             statement.execute("DROP TABLE mediaTable");
             statement.execute("DROP TABLE dirTable");
+            statement.execute("DROP TABLE settingsTable");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -158,6 +178,7 @@ public abstract class Database {
     public static void printTables() {
         DBTablePrinter.printTable(connection, "mediaTable");
         DBTablePrinter.printTable(connection, "dirTable");
+        DBTablePrinter.printTable(connection, "settingsTable");
     }
 
     public static Statement getStatement() {
@@ -170,5 +191,9 @@ public abstract class Database {
 
     public static MediaRepository getMediaRepository() {
         return mediaRepository;
+    }
+
+    public static SettingsRepository getSettingsRepository() {
+        return settingsRepository;
     }
 }

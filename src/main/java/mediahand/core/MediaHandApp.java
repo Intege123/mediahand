@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import mediahand.MediaLoader;
 import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
+import mediahand.domain.SettingsEntry;
 import mediahand.repository.base.Database;
 
 import java.io.File;
@@ -25,23 +26,45 @@ public class MediaHandApp extends Application {
     private static Scene scene;
 
     private BorderPane rootLayout;
+    private SettingsEntry settingsEntry;
 
     @Override
     public void start(Stage stage) throws IOException {
         MediaHandApp.stage = stage;
         MediaHandApp.mediaLoader = new MediaLoader();
 
-        initRootLayout();
-
         initDatabase();
 
+        initRootLayout();
+
         showMediaHand();
+    }
+
+    @Override
+    public void stop() {
+        System.out.println("test");
+        int width = (int) MediaHandApp.stage.getWidth();
+        int height = (int) MediaHandApp.stage.getHeight();
+        if (this.settingsEntry == null) {
+            Database.getSettingsRepository().create(new SettingsEntry("default", width, height));
+        } else {
+            this.settingsEntry.setWindowWidth(width);
+            this.settingsEntry.setWindowHeight(height);
+            Database.getSettingsRepository().update(this.settingsEntry);
+        }
     }
 
     private void initRootLayout() throws IOException {
         this.rootLayout = FXMLLoader.load(getClass().getResource("/fxml/RootLayout.fxml"));
         MediaHandApp.scene = new Scene(this.rootLayout);
         setDefaultScene();
+
+        this.settingsEntry = Database.getSettingsRepository().find("default");
+        if (this.settingsEntry != null) {
+            MediaHandApp.stage.setWidth(this.settingsEntry.getWindowWidth());
+            MediaHandApp.stage.setHeight(this.settingsEntry.getWindowHeight());
+        }
+
         MediaHandApp.stage.show();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
