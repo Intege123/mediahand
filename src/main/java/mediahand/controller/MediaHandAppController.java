@@ -77,7 +77,7 @@ public class MediaHandAppController {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
                 JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-                javaFXDirectRenderingScene.start(MediaHandApp.getStage());
+                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
             } catch (IOException e) {
                 changeMediaLocation();
             }

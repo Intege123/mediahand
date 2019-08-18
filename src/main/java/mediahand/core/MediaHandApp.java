@@ -17,12 +17,14 @@ import java.util.Optional;
 
 public class MediaHandApp extends Application {
 
-    private BorderPane rootLayout;
+    public static final String MEDIA_HAND_TITLE = "Media Hand";
 
     private static Stage stage;
     private static MediaLoader mediaLoader;
     private static MediaHandAppController mediaHandAppController;
     private static Scene scene;
+
+    private BorderPane rootLayout;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -38,9 +40,8 @@ public class MediaHandApp extends Application {
 
     private void initRootLayout() throws IOException {
         this.rootLayout = FXMLLoader.load(getClass().getResource("/fxml/RootLayout.fxml"));
-        scene = new Scene(this.rootLayout);
-        MediaHandApp.stage.setScene(scene);
-        MediaHandApp.stage.setTitle("Media Hand");
+        MediaHandApp.scene = new Scene(this.rootLayout);
+        setDefaultScene();
         MediaHandApp.stage.show();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -67,6 +68,11 @@ public class MediaHandApp extends Application {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void setDefaultScene() {
+        MediaHandApp.stage.setScene(MediaHandApp.scene);
+        MediaHandApp.stage.setTitle(MediaHandApp.MEDIA_HAND_TITLE);
     }
 
     public static boolean chooseBasePath() {

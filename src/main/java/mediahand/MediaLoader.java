@@ -82,7 +82,7 @@ public class MediaLoader {
     private void addSingleMedia(final MediaEntry newMediaEntry) {
         MediaRepository mediaRepository = Database.getMediaRepository();
         FilteredList<MediaEntry> mediaEntryFilteredList = MediaHandAppController.getMediaEntries()
-                .filtered(m -> m.getBasePath().getId() == this.basePath.getId() && m.getTitle().equals(newMediaEntry.getTitle()));
+                .filtered(m -> m.getTitle().equals(newMediaEntry.getTitle()));
         if (mediaEntryFilteredList.isEmpty()) {
             mediaRepository.create(newMediaEntry);
         } else {

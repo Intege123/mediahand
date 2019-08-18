@@ -1,6 +1,5 @@
 package mediahand.vlc;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -117,20 +116,20 @@ public class JavaFXDirectRenderingScene {
         this.canvas.widthProperty().bind(this.stackPane.widthProperty());
         this.canvas.heightProperty().bind(this.stackPane.heightProperty());
 
-        addStackPaneKeyListeners();
         addContextMenuListeners();
     }
 
-    public void start(Stage primaryStage) {
+    public void start(final Stage primaryStage, final String title) {
         this.stage = primaryStage;
 
         this.stage.setOnCloseRequest(new StopRenderingSceneHandler(this));
 
-        this.stage.setTitle("vlcj JavaFX Direct Rendering");
+        this.stage.setTitle(title);
 
         this.stage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
 
         Scene scene = new Scene(this.stackPane, Color.BLACK);
+        addSceneKeyListeners(scene);
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -141,6 +140,16 @@ public class JavaFXDirectRenderingScene {
         if (startTimer()) {
             onMediaLoaded();
         }
+    }
+
+    public void stop() {
+        this.stage.setOnCloseRequest(null);
+        stopTimer();
+        this.timer.cancel();
+
+        this.mediaPlayer.controls().stop();
+        this.mediaPlayer.release();
+        this.mediaPlayerFactory.release();
     }
 
     private void onMediaLoaded() {
@@ -196,23 +205,15 @@ public class JavaFXDirectRenderingScene {
         Slider volumeSlider = new Slider(0, 100, 50);
         mediaPlayer.audio().setVolume((int) volumeSlider.getValue());
         volumeSlider.setOnMouseClicked(event -> mediaPlayer.audio().setVolume((int) volumeSlider.getValue()));
+        volumeSlider.valueProperty().addListener((observable, oldValue, newValue) -> mediaPlayer.audio().setVolume(newValue.intValue()));
         return volumeSlider;
     }
 
-    public void stop() {
-        this.stage.setOnCloseRequest(null);
-        stopTimer();
-        this.timer.cancel();
-
-        this.mediaPlayer.release();
-        this.mediaPlayerFactory.release();
-    }
-
-    private void addStackPaneKeyListeners() {
-        this.stackPane.setOnKeyPressed(event -> {
+    private void addSceneKeyListeners(final Scene scene) {
+        scene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
                 stop();
-                MediaHandApp.getStage().setScene(MediaHandApp.getScene());
+                MediaHandApp.setDefaultScene();
             } else if (event.getCode() == KeyCode.SPACE) {
                 this.mediaPlayer.controls().pause();
             } else if (event.getCode() == KeyCode.ENTER) {
@@ -298,10 +299,6 @@ public class JavaFXDirectRenderingScene {
             JavaFXDirectRenderingScene.this.img = new WritableImage(sourceWidth, sourceHeight);
             JavaFXDirectRenderingScene.this.pixelWriter = JavaFXDirectRenderingScene.this.img.getPixelWriter();
 
-            Platform.runLater(() -> {
-                JavaFXDirectRenderingScene.this.stage.setWidth(sourceWidth);
-                JavaFXDirectRenderingScene.this.stage.setHeight(sourceHeight);
-            });
             return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
     }
