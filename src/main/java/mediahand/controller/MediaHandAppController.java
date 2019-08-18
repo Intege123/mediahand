@@ -3,8 +3,10 @@ package mediahand.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -24,15 +26,18 @@ import java.util.Optional;
 
 public class MediaHandAppController {
 
-    public TableView mediaTableView;
+    public TableView<MediaEntry> mediaTableView;
     public CheckBox showAllCheckbox;
 
     private static ObservableList<MediaEntry> mediaEntries;
     private static FilteredList<MediaEntry> filteredData;
+    public ComboBox<String> watchStateFilter;
 
     public void init() {
         addWatchStateColumn();
         fillTableView(Database.getMediaRepository().findAll());
+        this.watchStateFilter.setItems(FXCollections.observableArrayList("ALL", WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
+        this.watchStateFilter.getSelectionModel().selectFirst();
     }
 
     public void onPlayEnter(KeyEvent keyEvent) {
@@ -68,11 +73,14 @@ public class MediaHandAppController {
         MediaHandAppController.filteredData = new FilteredList<>(MediaHandAppController.mediaEntries);
         setFilteredDataPredicate();
 
-        this.mediaTableView.setItems(MediaHandAppController.filteredData);
+        SortedList<MediaEntry> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(this.mediaTableView.comparatorProperty());
+
+        this.mediaTableView.setItems(sortedData);
     }
 
     private void playEmbeddedMedia() {
-        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
@@ -85,7 +93,7 @@ public class MediaHandAppController {
     }
 
     private void playMedia() {
-        MediaEntry selectedItem = (MediaEntry) this.mediaTableView.getSelectionModel().getSelectedItem();
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             Desktop desktop = Desktop.getDesktop();
             try {
@@ -153,5 +161,9 @@ public class MediaHandAppController {
         } else {
             MediaHandAppController.filteredData.setPredicate(MediaEntry::isAvailable);
         }
+    }
+
+    public void onWatchStateFilter(ActionEvent actionEvent) {
+        MediaHandAppController.filteredData.setPredicate(m -> m.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem()));
     }
 }

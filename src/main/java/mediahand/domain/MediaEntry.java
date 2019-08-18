@@ -162,6 +162,10 @@ public class MediaEntry {
         this.available = available;
     }
 
+    public boolean filterByWatchState(final String watchState) {
+        return watchState.equals("ALL") || watchState.equals(this.watchState.toString());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
