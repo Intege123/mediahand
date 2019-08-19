@@ -121,6 +121,18 @@ public class JavaFXDirectRenderingScene {
     }
 
     public void start(final Stage primaryStage, final String title) {
+        initStage(primaryStage, title);
+
+        this.mediaPlayer.controls().setRepeat(false);
+
+        this.mediaPlayer.media().play(this.videoFile);
+
+        if (startTimer()) {
+            onMediaLoaded();
+        }
+    }
+
+    private void initStage(Stage primaryStage, String title) {
         this.stage = primaryStage;
 
         this.stage.setOnCloseRequest(new StopRenderingSceneHandler(this));
@@ -129,36 +141,15 @@ public class JavaFXDirectRenderingScene {
 
         this.stage.setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
 
+        Scene scene = initScene();
+        this.stage.setScene(scene);
+        this.stage.show();
+    }
+
+    private Scene initScene() {
         Scene scene = new Scene(this.stackPane, Color.BLACK);
         addSceneKeyListeners(scene);
-        primaryStage.setScene(scene);
-        primaryStage.show();
-
-        this.mediaPlayer.controls().setRepeat(false);
-
-        this.mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
-            @Override
-            public void finished(MediaPlayer mediaPlayer) {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        stop();
-                        MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
-                        if (MediaHandApp.getMediaHandAppController().autoContinueCheckbox.isSelected()) {
-                            MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
-                        } else {
-                            MediaHandApp.setDefaultScene();
-                        }
-                    }
-                });
-            }
-        });
-
-        this.mediaPlayer.media().play(this.videoFile);
-
-        if (startTimer()) {
-            onMediaLoaded();
-        }
+        return scene;
     }
 
     public void stop() {
@@ -171,27 +162,64 @@ public class JavaFXDirectRenderingScene {
         this.mediaPlayerFactory.release();
     }
 
+    private void onMediaFinished() {
+        boolean fullScreen = JavaFXDirectRenderingScene.this.stage.isFullScreen();
+        stop();
+        MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
+        if (MediaHandApp.getMediaHandAppController().autoContinueCheckbox.isSelected()) {
+            playSelectedMedia(fullScreen);
+        } else {
+            MediaHandApp.setDefaultScene();
+        }
+    }
+
+    private void playSelectedMedia(boolean fullScreen) {
+        MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
+        JavaFXDirectRenderingScene.this.stage.setFullScreen(fullScreen);
+    }
+
     private void onMediaLoaded() {
         this.contextMenu = buildContextMenu(this.mediaPlayer);
+
+        setMediaPlayerEventListener();
+
+        double mediaDuration = this.mediaPlayer.media().info().duration() / 60000.0;
+        BorderPane sliderPane = initSliderPane(mediaDuration);
+
+        this.controlPane.setBottom(sliderPane);
+    }
+
+    private void setMediaPlayerEventListener() {
         this.mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
             @Override
             public void timeChanged(MediaPlayer mediaPlayer, long newTime) {
-                if (!JavaFXDirectRenderingScene.this.mediaTimeSlider.isPressed()) {
-                    JavaFXDirectRenderingScene.this.mediaTimeSlider.setValue(newTime / 60000.0);
-                }
+                updateMediaTimeSlider(newTime);
+            }
+
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                Platform.runLater(() -> {
+                    onMediaFinished();
+                });
             }
         });
-        double mediaDuration = this.mediaPlayer.media().info().duration() / 60000.0;
+    }
 
-        this.mediaTimeSlider = initializeMediaTimeSlider(mediaDuration, this.mediaPlayer);
-        Slider volumeSlider = initializeVolumeSlider(this.mediaPlayer);
+    private void updateMediaTimeSlider(long newTime) {
+        if (!JavaFXDirectRenderingScene.this.mediaTimeSlider.isPressed()) {
+            JavaFXDirectRenderingScene.this.mediaTimeSlider.setValue(newTime / 60000.0);
+        }
+    }
+
+    private BorderPane initSliderPane(double mediaDuration) {
+        this.mediaTimeSlider = initMediaTimeSlider(mediaDuration, this.mediaPlayer);
+        Slider volumeSlider = initVolumeSlider(this.mediaPlayer);
 
         BorderPane sliderPane = new BorderPane(this.mediaTimeSlider);
         sliderPane.setRight(volumeSlider);
 
         addControlPaneMouseListener(sliderPane);
-
-        this.controlPane.setBottom(sliderPane);
+        return sliderPane;
     }
 
     private void addControlPaneMouseListener(BorderPane sliderPane) {
@@ -211,7 +239,7 @@ public class JavaFXDirectRenderingScene {
         });
     }
 
-    private Slider initializeMediaTimeSlider(final double mediaDuration, final EmbeddedMediaPlayer mediaPlayer) {
+    private Slider initMediaTimeSlider(final double mediaDuration, final EmbeddedMediaPlayer mediaPlayer) {
         Slider slider = new Slider(0, mediaDuration, 0);
         slider.setMajorTickUnit(mediaDuration);
         slider.setShowTickLabels(true);
@@ -220,7 +248,7 @@ public class JavaFXDirectRenderingScene {
         return slider;
     }
 
-    private Slider initializeVolumeSlider(final EmbeddedMediaPlayer mediaPlayer) {
+    private Slider initVolumeSlider(final EmbeddedMediaPlayer mediaPlayer) {
         Slider volumeSlider = new Slider(0, 100, 50);
         mediaPlayer.audio().setVolume((int) volumeSlider.getValue());
         volumeSlider.setOnMouseClicked(event -> mediaPlayer.audio().setVolume((int) volumeSlider.getValue()));
@@ -240,19 +268,25 @@ public class JavaFXDirectRenderingScene {
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
                 this.stage.setFullScreen(true);
             } else if (event.getCode() == KeyCode.UP) {
-                boolean fullScreen = this.stage.isFullScreen();
-                stop();
-                MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
-                MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
-                this.stage.setFullScreen(fullScreen);
+                playNextEpisode();
             } else if (event.getCode() == KeyCode.DOWN) {
-                boolean fullScreen = this.stage.isFullScreen();
-                stop();
-                MediaHandApp.getMediaHandAppController().decreaseCurrentEpisode();
-                MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
-                this.stage.setFullScreen(fullScreen);
+                playPreviousEpisode();
             }
         });
+    }
+
+    private void playNextEpisode() {
+        boolean fullScreen = this.stage.isFullScreen();
+        stop();
+        MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
+        playSelectedMedia(fullScreen);
+    }
+
+    private void playPreviousEpisode() {
+        boolean fullScreen = this.stage.isFullScreen();
+        stop();
+        MediaHandApp.getMediaHandAppController().decreaseCurrentEpisode();
+        playSelectedMedia(fullScreen);
     }
 
     private void addContextMenuListeners() {
@@ -273,37 +307,69 @@ public class JavaFXDirectRenderingScene {
     }
 
     private ContextMenu buildContextMenu(final EmbeddedMediaPlayer mediaPlayer) {
-        Menu audioMenu = new Menu("Audio");
-        for (TrackDescription trackDescription : this.mediaPlayer.audio().trackDescriptions()) {
-            MenuItem item = new MenuItem(trackDescription.description());
-            item.setId(trackDescription.id() + "");
-            if (trackDescription.id() == mediaPlayer.audio().track()) {
-                item.setStyle("-fx-text-fill: green;");
-            }
-            item.setOnAction(event -> {
-                resetStyleOfCurrentAudioTrack(mediaPlayer);
-                mediaPlayer.audio().setTrack(trackDescription.id());
-                item.setStyle("-fx-text-fill: green;");
-            });
-            audioMenu.getItems().add(item);
-        }
+        Menu audioMenu = buildAudioContextMenu(mediaPlayer);
 
-        Menu subtitleMenu = new Menu("Subtitle");
-        for (TrackDescription trackDescription : this.mediaPlayer.subpictures().trackDescriptions()) {
-            MenuItem item = new MenuItem(trackDescription.description());
-            item.setId(trackDescription.id() + "");
-            if (trackDescription.id() == mediaPlayer.subpictures().track()) {
-                item.setStyle("-fx-text-fill: green;");
-            }
-            item.setOnAction(event -> {
-                resetStyleOfCurrentSubtitleTrack(mediaPlayer);
-                mediaPlayer.subpictures().setTrack(trackDescription.id());
-                item.setStyle("-fx-text-fill: green;");
-            });
-            subtitleMenu.getItems().add(item);
-        }
+        Menu subtitleMenu = buildSubtitleContextMenu(mediaPlayer);
 
         return new ContextMenu(audioMenu, subtitleMenu);
+    }
+
+    private Menu buildSubtitleContextMenu(EmbeddedMediaPlayer mediaPlayer) {
+        Menu subtitleMenu = new Menu("Subtitle");
+        for (TrackDescription trackDescription : this.mediaPlayer.subpictures().trackDescriptions()) {
+            MenuItem item = initSubtitleMenuItem(mediaPlayer, trackDescription);
+            subtitleMenu.getItems().add(item);
+        }
+        return subtitleMenu;
+    }
+
+    private MenuItem initSubtitleMenuItem(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription) {
+        MenuItem item = new MenuItem(trackDescription.description());
+        item.setId(trackDescription.id() + "");
+        if (trackDescription.id() == mediaPlayer.subpictures().track()) {
+            highlightMenuItem(item);
+        }
+        item.setOnAction(event -> {
+            setSubtitleTrack(mediaPlayer, trackDescription, item);
+        });
+        return item;
+    }
+
+    private void setSubtitleTrack(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription, MenuItem item) {
+        resetStyleOfCurrentSubtitleTrack(mediaPlayer);
+        mediaPlayer.subpictures().setTrack(trackDescription.id());
+        highlightMenuItem(item);
+    }
+
+    private Menu buildAudioContextMenu(EmbeddedMediaPlayer mediaPlayer) {
+        Menu audioMenu = new Menu("Audio");
+        for (TrackDescription trackDescription : this.mediaPlayer.audio().trackDescriptions()) {
+            MenuItem item = initAudioMenuItem(mediaPlayer, trackDescription);
+            audioMenu.getItems().add(item);
+        }
+        return audioMenu;
+    }
+
+    private MenuItem initAudioMenuItem(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription) {
+        MenuItem item = new MenuItem(trackDescription.description());
+        item.setId(trackDescription.id() + "");
+        if (trackDescription.id() == mediaPlayer.audio().track()) {
+            highlightMenuItem(item);
+        }
+        item.setOnAction(event -> {
+            setAudioTrack(mediaPlayer, trackDescription, item);
+        });
+        return item;
+    }
+
+    private void setAudioTrack(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription, MenuItem item) {
+        resetStyleOfCurrentAudioTrack(mediaPlayer);
+        mediaPlayer.audio().setTrack(trackDescription.id());
+        highlightMenuItem(item);
+    }
+
+    private void highlightMenuItem(MenuItem item) {
+        item.setStyle("-fx-text-fill: green;");
     }
 
     private void resetStyleOfCurrentAudioTrack(final EmbeddedMediaPlayer mediaPlayer) {
