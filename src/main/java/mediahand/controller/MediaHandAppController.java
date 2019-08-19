@@ -25,13 +25,14 @@ import java.util.Optional;
 public class MediaHandAppController {
 
     public TableView<MediaEntry> mediaTableView;
-    public CheckBox showAllCheckbox;
 
     private static ObservableList<MediaEntry> mediaEntries;
     private static FilteredList<MediaEntry> filteredData;
-    public ComboBox<String> watchStateFilter;
+
     public TextField titleFilter;
-    private JavaFXDirectRenderingScene javaFXDirectRenderingScene;
+    public ComboBox<String> watchStateFilter;
+    public CheckBox showAllCheckbox;
+    public CheckBox autoContinueCheckbox;
 
     public void init() {
         addWatchStateColumn();
@@ -98,8 +99,8 @@ public class MediaHandAppController {
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
-                this.javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-                this.javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
+                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
+                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
             } catch (IOException e) {
                 changeMediaLocation();
             }

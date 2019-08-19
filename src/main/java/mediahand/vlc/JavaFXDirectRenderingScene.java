@@ -1,5 +1,6 @@
 package mediahand.vlc;
 
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -134,6 +135,24 @@ public class JavaFXDirectRenderingScene {
         primaryStage.show();
 
         this.mediaPlayer.controls().setRepeat(false);
+
+        this.mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        stop();
+                        MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
+                        if (MediaHandApp.getMediaHandAppController().autoContinueCheckbox.isSelected()) {
+                            MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
+                        } else {
+                            MediaHandApp.setDefaultScene();
+                        }
+                    }
+                });
+            }
+        });
 
         this.mediaPlayer.media().play(this.videoFile);
 

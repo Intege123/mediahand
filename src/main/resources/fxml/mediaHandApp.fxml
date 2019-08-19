@@ -15,7 +15,9 @@
                     prefHeight="25.0" prefWidth="25.0" text="+"/>
             <Button layoutY="46.0" mnemonicParsing="false" onAction="#decreaseCurrentEpisode" prefHeight="25.0"
                     prefWidth="25.0" text="-"/>
-            <CheckBox fx:id="showAllCheckbox" layoutX="2.0" layoutY="100.0" mnemonicParsing="false"
+            <CheckBox fx:id="autoContinueCheckbox" layoutX="2.0" layoutY="80.0" mnemonicParsing="false"
+                      text="Auto continue"/>
+            <CheckBox fx:id="showAllCheckbox" layoutX="2.0" layoutY="120.0" mnemonicParsing="false"
                       onAction="#onFilter" text="Show All"/>
             <ComboBox fx:id="watchStateFilter" layoutX="2.0" layoutY="150.0"
                       onAction="#onFilter"/>
