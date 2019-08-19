@@ -31,6 +31,7 @@ public class MediaHandAppController {
     private static FilteredList<MediaEntry> filteredData;
     public ComboBox<String> watchStateFilter;
     public TextField titleFilter;
+    private JavaFXDirectRenderingScene javaFXDirectRenderingScene;
 
     public void init() {
         addWatchStateColumn();
@@ -92,13 +93,13 @@ public class MediaHandAppController {
         this.mediaTableView.getSortOrder().add(mediaEntryTableTitleColumn);
     }
 
-    private void playEmbeddedMedia() {
+    public void playEmbeddedMedia() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
-                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
+                this.javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
+                this.javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
             } catch (IOException e) {
                 changeMediaLocation();
             }
@@ -138,7 +139,7 @@ public class MediaHandAppController {
         }
     }
 
-    public void increaseCurrentEpisode(ActionEvent actionEvent) {
+    public void increaseCurrentEpisode() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisode() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() + 1);
@@ -147,7 +148,7 @@ public class MediaHandAppController {
         }
     }
 
-    public void decreaseCurrentEpisode(ActionEvent actionEvent) {
+    public void decreaseCurrentEpisode() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisode() > 1) {
             selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() - 1);

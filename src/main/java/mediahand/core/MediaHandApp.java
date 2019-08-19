@@ -42,7 +42,6 @@ public class MediaHandApp extends Application {
 
     @Override
     public void stop() {
-        System.out.println("test");
         int width = (int) MediaHandApp.stage.getWidth();
         int height = (int) MediaHandApp.stage.getHeight();
         if (this.settingsEntry == null) {

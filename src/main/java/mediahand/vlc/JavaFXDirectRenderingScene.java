@@ -133,7 +133,7 @@ public class JavaFXDirectRenderingScene {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        this.mediaPlayer.controls().setRepeat(true);
+        this.mediaPlayer.controls().setRepeat(false);
 
         this.mediaPlayer.media().play(this.videoFile);
 
@@ -220,6 +220,18 @@ public class JavaFXDirectRenderingScene {
                 this.mediaPlayer.controls().skipTime(80000);
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
                 this.stage.setFullScreen(true);
+            } else if (event.getCode() == KeyCode.UP) {
+                boolean fullScreen = this.stage.isFullScreen();
+                stop();
+                MediaHandApp.getMediaHandAppController().increaseCurrentEpisode();
+                MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
+                this.stage.setFullScreen(fullScreen);
+            } else if (event.getCode() == KeyCode.DOWN) {
+                boolean fullScreen = this.stage.isFullScreen();
+                stop();
+                MediaHandApp.getMediaHandAppController().decreaseCurrentEpisode();
+                MediaHandApp.getMediaHandAppController().playEmbeddedMedia();
+                this.stage.setFullScreen(fullScreen);
             }
         });
     }
