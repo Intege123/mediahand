@@ -26,5 +26,6 @@ public class RootLayoutController {
 
     public void addMedia() {
         MediaHandApp.getMediaLoader().addSingleMedia();
+        MediaHandApp.getMediaHandAppController().fillTableView(Database.getMediaRepository().findAll());
     }
 }

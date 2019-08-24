@@ -80,15 +80,11 @@ public class MediaLoader {
     public void addSingleMedia() {
         Optional<File> optionalDir = MediaHandApp.chooseMediaDirectory();
         if (optionalDir.isPresent()) {
-            try {
-                File dir = optionalDir.get();
-                DirectoryEntry basePath = Database.getBasePathRepository().findAll().get(0);
-                Path movedDirPath = Files.move(dir.toPath(), Path.of(basePath.getPath() + "/Series/" + dir.getName()));
-                MediaEntry tempMediaEntry = createTempMediaEntry(movedDirPath, basePath);
-                addSingleMedia(tempMediaEntry);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            File dir = optionalDir.get();
+            DirectoryEntry basePath = Database.getBasePathRepository().findAll().get(0);
+//                Path movedDirPath = Files.move(dir.toPath(), Path.of(basePath.getPath() + "/Series/" + dir.getName()));
+            MediaEntry tempMediaEntry = createTempMediaEntry(dir.toPath(), basePath);
+            addSingleMedia(tempMediaEntry);
         }
     }
 
@@ -134,13 +130,12 @@ public class MediaLoader {
                 WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, false);
     }
 
-    private MediaEntry updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
+    private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
         mediaEntry.setEpisodeNumber(newMediaEntry.getEpisodeNumber());
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
         mediaRepository.update(mediaEntry);
-        return mediaEntry;
     }
 
     public void updateMediaEntryPath(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {

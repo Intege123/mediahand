@@ -25,7 +25,6 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
             Database.getStatement().execute("INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, DIRTABLE_FK) " +
                     "VALUES('" + entry.getTitle() + "', " + entry.getEpisodeNumber() + ", '" + entry.getMediaType() + "', '" + entry.getWatchState().getValue() + "', '" +
                     entry.getPath() + "', " + entry.getEpisodeLength() + ", " + entry.getBasePath().getId() + ")");
-            MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLIntegrityConstraintViolationException e) {
             System.err.println("The entry '" + entry.getTitle() + "' already exists.");
         } catch (SQLException e) {
