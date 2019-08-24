@@ -7,14 +7,11 @@
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <Menu mnemonicParsing="false" text="File">
+                <MenuItem mnemonicParsing="false" onAction="#addMedia" text="Add Media"/>
                 <MenuItem mnemonicParsing="false" onAction="#addDirectory" text="Add Dir"/>
                 <MenuItem mnemonicParsing="false" onAction="#loadNewMediaEntries" text="Load"/>
-            </Menu>
-            <Menu mnemonicParsing="false" text="Edit">
-                <MenuItem mnemonicParsing="false" text="Delete" onAction="#onDelete"/>
-            </Menu>
-            <Menu mnemonicParsing="false" text="Help">
-                <MenuItem mnemonicParsing="false" text="About"/>
+                <SeparatorMenuItem/>
+                <MenuItem mnemonicParsing="false" text="Remove" onAction="#onRemove"/>
             </Menu>
         </MenuBar>
     </top>

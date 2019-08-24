@@ -101,12 +101,16 @@ public class MediaEntry {
         this.path = path;
     }
 
-    public int getCurrentEpisode() {
+    public int getCurrentEpisodeNumber() {
         return this.currentEpisode;
     }
 
-    public void setCurrentEpisode(int currentEpisode) {
+    public void setCurrentEpisodeNumber(int currentEpisode) {
         this.currentEpisode = currentEpisode;
+    }
+
+    public String getCurrentEpisode() {
+        return this.currentEpisode + "/" + this.episodeNumber;
     }
 
     public Date getAdded() {

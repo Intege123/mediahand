@@ -98,9 +98,9 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
-                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisodeNumber());
                 JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisode());
+                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber());
             } catch (IOException e) {
                 changeMediaLocation();
             }
@@ -112,7 +112,7 @@ public class MediaHandAppController {
         if (selectedItem != null && selectedItem.isAvailable()) {
             Desktop desktop = Desktop.getDesktop();
             try {
-                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisode());
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisodeNumber());
                 try {
                     desktop.open(file);
                 } catch (IOException e) {
@@ -136,25 +136,22 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             MediaHandApp.getMediaLoader().updateMediaEntryPath(mediaEntry, Database.getMediaRepository(), selectedItem);
-            triggerMediaEntryUpdate(selectedItem);
         }
     }
 
     public void increaseCurrentEpisode() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem.getCurrentEpisode() < selectedItem.getEpisodeNumber()) {
-            selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() + 1);
+        if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() < selectedItem.getEpisodeNumber()) {
+            selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() + 1);
             Database.getMediaRepository().update(selectedItem);
-            triggerMediaEntryUpdate(selectedItem);
         }
     }
 
     public void decreaseCurrentEpisode() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem.getCurrentEpisode() > 1) {
-            selectedItem.setCurrentEpisode(selectedItem.getCurrentEpisode() - 1);
+        if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() > 1) {
+            selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() - 1);
             Database.getMediaRepository().update(selectedItem);
-            triggerMediaEntryUpdate(selectedItem);
         }
     }
 

@@ -76,7 +76,7 @@ public class MediaHandApp extends Application {
         Database.init("AnimeDatabase", "lueko", "1234", false);
 
         if (Database.getBasePathRepository().findAll().size() == 0) {
-            chooseBasePath();
+            addBasePath();
         }
     }
 
@@ -97,17 +97,21 @@ public class MediaHandApp extends Application {
         MediaHandApp.stage.setTitle(MediaHandApp.MEDIA_HAND_TITLE);
     }
 
-    public static boolean chooseBasePath() {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        File dialog = directoryChooser.showDialog(MediaHandApp.stage);
+    public static boolean addBasePath() {
+        Optional<File> baseDir = chooseMediaDirectory();
 
-        if (dialog != null) {
-            MediaHandApp.mediaLoader.addMedia(Database.getBasePathRepository().create(new DirectoryEntry(dialog.getAbsolutePath())));
+        if (baseDir.isPresent()) {
+            MediaHandApp.mediaLoader.addMedia(Database.getBasePathRepository().create(new DirectoryEntry(baseDir.get().getAbsolutePath())));
             return true;
         }
         return false;
     }
 
+    /**
+     * Opens a dialog to choose a directory of the file system.
+     *
+     * @return the chosen directory
+     */
     public static Optional<File> chooseMediaDirectory() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File dialog = directoryChooser.showDialog(MediaHandApp.getStage());

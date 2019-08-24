@@ -1,6 +1,7 @@
 package mediahand.repository;
 
 import mediahand.WatchState;
+import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.BaseRepository;
@@ -24,6 +25,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
             Database.getStatement().execute("INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, DIRTABLE_FK) " +
                     "VALUES('" + entry.getTitle() + "', " + entry.getEpisodeNumber() + ", '" + entry.getMediaType() + "', '" + entry.getWatchState().getValue() + "', '" +
                     entry.getPath() + "', " + entry.getEpisodeLength() + ", " + entry.getBasePath().getId() + ")");
+            MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLIntegrityConstraintViolationException e) {
             System.err.println("The entry '" + entry.getTitle() + "' already exists.");
         } catch (SQLException e) {
@@ -39,7 +41,8 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
                     entry.getEpisodeNumber() + "', MEDIATYPE = '" + entry.getMediaType() + "', WATCHSTATE = '" + entry.getWatchState().getValue() + "', CURRENTEPISODE = '" +
-                    entry.getCurrentEpisode() + "', DIRTABLE_FK = '" + entry.getBasePath().getId() + "', PATH = '" + entry.getPath() + "' WHERE ID = '" + entry.getId() + "'");
+                    entry.getCurrentEpisodeNumber() + "', DIRTABLE_FK = '" + entry.getBasePath().getId() + "', PATH = '" + entry.getPath() + "' WHERE ID = '" + entry.getId() + "'");
+            MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLException e) {
             System.err.println("Could not update media entry: " + entry.getTitle());
             e.printStackTrace();
@@ -52,6 +55,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         Check.notNullArgument(entry, "entry");
         try {
             Database.getStatement().execute("DELETE FROM mediaTable WHERE Title = '" + entry.getTitle() + "'");
+            MediaHandAppController.getMediaEntries().remove(entry);
         } catch (SQLException e) {
             System.err.println("Could not remove media entry: " + entry.getTitle());
             e.printStackTrace();
