@@ -21,6 +21,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
+import mediahand.domain.MediaEntry;
+import mediahand.repository.base.Database;
 import mediahand.vlc.event.StopRenderingSceneHandler;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -94,8 +96,11 @@ public class JavaFXDirectRenderingScene {
 
     private final long delay = 1000;
 
-    public JavaFXDirectRenderingScene(final File videoFile) {
+    private MediaEntry mediaEntry;
+
+    public JavaFXDirectRenderingScene(final File videoFile, final MediaEntry mediaEntry) {
         this.videoFile = videoFile.getAbsolutePath();
+        this.mediaEntry = mediaEntry;
 
         this.canvas = new Canvas();
 
@@ -157,6 +162,8 @@ public class JavaFXDirectRenderingScene {
         stopTimer();
         this.timer.cancel();
 
+        Database.getMediaRepository().update(this.mediaEntry);
+
         this.mediaPlayer.controls().stop();
         this.mediaPlayer.release();
         this.mediaPlayerFactory.release();
@@ -211,9 +218,9 @@ public class JavaFXDirectRenderingScene {
         }
     }
 
-    private BorderPane initSliderPane(double mediaDuration) {
+    private BorderPane initSliderPane(final double mediaDuration) {
         this.mediaTimeSlider = initMediaTimeSlider(mediaDuration, this.mediaPlayer);
-        Slider volumeSlider = initVolumeSlider(this.mediaPlayer);
+        Slider volumeSlider = initVolumeSlider(this.mediaPlayer, this.mediaEntry.getVolume());
 
         BorderPane sliderPane = new BorderPane(this.mediaTimeSlider);
         sliderPane.setRight(volumeSlider);
@@ -248,10 +255,14 @@ public class JavaFXDirectRenderingScene {
         return slider;
     }
 
-    private Slider initVolumeSlider(final EmbeddedMediaPlayer mediaPlayer) {
-        Slider volumeSlider = new Slider(0, 100, 50);
+    private Slider initVolumeSlider(final EmbeddedMediaPlayer mediaPlayer, final int volume) {
+        Slider volumeSlider = new Slider(0, 100, volume);
         mediaPlayer.audio().setVolume((int) volumeSlider.getValue());
-        volumeSlider.setOnMouseClicked(event -> mediaPlayer.audio().setVolume((int) volumeSlider.getValue()));
+        volumeSlider.setOnMouseClicked(event -> {
+            int newVolume = (int) volumeSlider.getValue();
+            mediaPlayer.audio().setVolume(newVolume);
+            this.mediaEntry.setVolume(newVolume);
+        });
         volumeSlider.valueProperty().addListener((observable, oldValue, newValue) -> mediaPlayer.audio().setVolume(newValue.intValue()));
         return volumeSlider;
     }

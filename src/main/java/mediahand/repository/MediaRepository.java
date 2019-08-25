@@ -22,9 +22,9 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         Check.notNullArgument(entry, "entry");
 
         try {
-            Database.getStatement().execute("INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, DIRTABLE_FK) " +
+            Database.getStatement().execute("INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, Volume, DIRTABLE_FK) " +
                     "VALUES('" + entry.getTitle() + "', " + entry.getEpisodeNumber() + ", '" + entry.getMediaType() + "', '" + entry.getWatchState().getValue() + "', '" +
-                    entry.getPath() + "', " + entry.getEpisodeLength() + ", " + entry.getBasePath().getId() + ")");
+                    entry.getPath() + "', " + entry.getEpisodeLength() + ", " + entry.getVolume() + ", " + entry.getBasePath().getId() + ")");
         } catch (SQLIntegrityConstraintViolationException e) {
             System.err.println("The entry '" + entry.getTitle() + "' already exists.");
         } catch (SQLException e) {
@@ -40,7 +40,8 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
                     entry.getEpisodeNumber() + "', MEDIATYPE = '" + entry.getMediaType() + "', WATCHSTATE = '" + entry.getWatchState().getValue() + "', CURRENTEPISODE = '" +
-                    entry.getCurrentEpisodeNumber() + "', DIRTABLE_FK = '" + entry.getBasePath().getId() + "', PATH = '" + entry.getPath() + "' WHERE ID = '" + entry.getId() + "'");
+                    entry.getCurrentEpisodeNumber() + "', Volume='" + entry.getVolume() + "', DIRTABLE_FK = '" + entry.getBasePath().getId() + "', PATH = '" + entry.getPath() +
+                    "' WHERE ID = '" + entry.getId() + "'");
             MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLException e) {
             System.err.println("Could not update media entry: " + entry.getTitle());
@@ -66,7 +67,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         Check.notNullArgument(entry, "entry");
         try {
             ResultSet result = Database.getStatement().executeQuery("SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, " +
-                    "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, " +
+                    "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, " +
                     "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE, DIRTABLE " +
                     "WHERE MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID AND TITLE = '" + entry.getTitle() + "'");
             if (result.next()) {
@@ -76,7 +77,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                         result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
                         result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                         result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
-                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists);
+                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists, result.getInt("VOLUME"));
             } else {
                 System.err.println("No entry \"" + entry.getTitle() + "\" found.");
             }
@@ -93,7 +94,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
 
         try {
             ResultSet result = Database.getStatement().executeQuery("SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, " +
-                    "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, " +
+                    "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, " +
                     "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE, DIRTABLE WHERE MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID");
             while (result.next()) {
                 String dirtable_path = result.getString("dirtable_path");
@@ -103,7 +104,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                         result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
                         result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                         result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
-                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists));
+                        result.getInt("WATCHNUMBER"), new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path), exists, result.getInt("VOLUME")));
             }
         } catch (SQLException e) {
             e.printStackTrace();

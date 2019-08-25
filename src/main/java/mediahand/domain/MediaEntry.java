@@ -3,32 +3,95 @@ package mediahand.domain;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import mediahand.WatchState;
+import utils.Check;
 
 import java.util.Date;
 import java.util.Objects;
 
 public class MediaEntry {
 
+    /**
+     * Id in the database.
+     */
     private int id;
+
+    /**
+     * Title of the media (most likely the name of the directory).
+     */
     private String title;
+
+    /**
+     * Number of episodes of the media.
+     */
     private int episodeNumber;
+
+    /**
+     * Type of the media (OVA, Series, ...).
+     */
     private String mediaType;
+
+    /**
+     * State of the media (Watching, Watched, ...).
+     */
     private WatchState watchState;
+
+    /**
+     * Rating of the media based on the users opinion.
+     */
     private int rating;
+
+    /**
+     * The path to the media directory relative to the base path.
+     */
     private String path;
+
+    /**
+     * Current episode, the user wants to watch.
+     */
     private int currentEpisode;
+
+    /**
+     * Date when the media was added to the database.
+     */
     private Date added;
+
+    /**
+     * Average length of the media per episode in minutes.
+     */
     private int episodeLength;
+
+    /**
+     * Date when the user first watched the media.
+     */
     private Date watchedDate;
+
+    /**
+     * Count how many times the user watched the media.
+     */
     private int watchedCount;
+
+    /**
+     * The base path of the media, where most likely are more media to find.
+     */
     private DirectoryEntry basePath;
+
+    /**
+     * True if the media is available and can be played (e.g. false, if an external drive is not connected).
+     */
     private boolean available;
 
+    /**
+     * Volume of the media player to use for this media.
+     */
+    private int volume;
+
     public MediaEntry(final String title, final String path, final DirectoryEntry basePath) {
-        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath, false);
+        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath, false, 50);
     }
 
-    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, boolean available) {
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, boolean available, int volume) {
+        Check.notNullArgument(title, "title");
+
         this.id = id;
         this.title = title;
         this.episodeNumber = episodeNumber;
@@ -43,6 +106,7 @@ public class MediaEntry {
         this.watchedCount = watchedCount;
         this.basePath = basePath;
         this.available = available;
+        this.volume = volume;
     }
 
     public int getId() {
@@ -165,6 +229,14 @@ public class MediaEntry {
         return watchState.equals("ALL") || watchState.equals(this.watchState.toString());
     }
 
+    public int getVolume() {
+        return this.volume;
+    }
+
+    public void setVolume(int volume) {
+        this.volume = volume;
+    }
+
     @Override
     public String toString() {
         return this.title;
@@ -175,13 +247,25 @@ public class MediaEntry {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MediaEntry that = (MediaEntry) o;
-        return this.title.equals(that.title) &&
-                this.path.equals(that.path) &&
-                this.basePath.equals(that.basePath);
+        return this.id == that.id &&
+                this.episodeNumber == that.episodeNumber &&
+                this.rating == that.rating &&
+                this.currentEpisode == that.currentEpisode &&
+                this.episodeLength == that.episodeLength &&
+                this.watchedCount == that.watchedCount &&
+                this.available == that.available &&
+                this.volume == that.volume &&
+                this.title.equals(that.title) &&
+                Objects.equals(this.mediaType, that.mediaType) &&
+                this.watchState == that.watchState &&
+                Objects.equals(this.path, that.path) &&
+                Objects.equals(this.added, that.added) &&
+                Objects.equals(this.watchedDate, that.watchedDate) &&
+                Objects.equals(this.basePath, that.basePath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.title, this.path, this.basePath);
+        return Objects.hash(this.id, this.title, this.episodeNumber, this.mediaType, this.watchState, this.rating, this.path, this.currentEpisode, this.added, this.episodeLength, this.watchedDate, this.watchedCount, this.basePath, this.available, this.volume);
     }
 }

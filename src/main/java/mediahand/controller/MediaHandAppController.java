@@ -19,6 +19,7 @@ import mediahand.vlc.JavaFXDirectRenderingScene;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,10 +100,11 @@ public class MediaHandAppController {
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisodeNumber());
-                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file);
-                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber());
+                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file, selectedItem);
+                String windowTitle = selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber();
+                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), windowTitle);
             } catch (IOException e) {
-                changeMediaLocation();
+                changeMediaLocation(selectedItem);
             }
         }
     }
@@ -119,13 +121,13 @@ public class MediaHandAppController {
                     e.printStackTrace();
                 }
             } catch (IOException e) {
-                changeMediaLocation();
+                changeMediaLocation(selectedItem);
             }
         }
     }
 
-    private void changeMediaLocation() {
-        Optional<File> directory = MediaHandApp.chooseMediaDirectory();
+    private void changeMediaLocation(final MediaEntry mediaEntry) {
+        Optional<File> directory = MediaHandApp.chooseMediaDirectory(Path.of(mediaEntry.getBasePath().getPath()));
         if (directory.isPresent()) {
             MediaEntry updatedMediaEntry = MediaHandApp.getMediaLoader().createTempMediaEntry(directory.get().toPath());
             updateMedia(updatedMediaEntry);
@@ -135,7 +137,7 @@ public class MediaHandAppController {
     private void updateMedia(final MediaEntry mediaEntry) {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
-            MediaHandApp.getMediaLoader().updateMediaEntryPath(mediaEntry, Database.getMediaRepository(), selectedItem);
+            MediaHandApp.getMediaLoader().updateMediaEntry(mediaEntry, Database.getMediaRepository(), selectedItem);
         }
     }
 

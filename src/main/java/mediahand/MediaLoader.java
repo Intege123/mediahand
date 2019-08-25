@@ -78,11 +78,10 @@ public class MediaLoader {
     }
 
     public void addSingleMedia() {
-        Optional<File> optionalDir = MediaHandApp.chooseMediaDirectory();
+        DirectoryEntry basePath = Database.getBasePathRepository().findAll().get(0);
+        Optional<File> optionalDir = MediaHandApp.chooseMediaDirectory(Path.of(basePath.getPath()));
         if (optionalDir.isPresent()) {
             File dir = optionalDir.get();
-            DirectoryEntry basePath = Database.getBasePathRepository().findAll().get(0);
-//                Path movedDirPath = Files.move(dir.toPath(), Path.of(basePath.getPath() + "/Series/" + dir.getName()));
             MediaEntry tempMediaEntry = createTempMediaEntry(dir.toPath(), basePath);
             addSingleMedia(tempMediaEntry);
         }
@@ -118,7 +117,7 @@ public class MediaLoader {
         String mediaType = mediaDirectory.getParent().getFileName().toString();
         String relativePath = mediaDirectory.toString().substring(optionalBasePath.get().getPath().length());
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), false);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), false, 50);
     }
 
     private MediaEntry createTempMediaEntry(final Path mediaDirectory, final DirectoryEntry basePath) {
@@ -127,7 +126,7 @@ public class MediaLoader {
         String mediaType = mediaDirectory.getParent().getFileName().toString();
         String relativePath = mediaDirectory.toString().substring(basePath.getPath().length());
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, false);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, false, 50);
     }
 
     private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
@@ -138,7 +137,7 @@ public class MediaLoader {
         mediaRepository.update(mediaEntry);
     }
 
-    public void updateMediaEntryPath(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
+    public void updateMediaEntry(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
         mediaEntry.setTitle(newMediaEntry.getTitle());
         mediaEntry.setBasePath(newMediaEntry.getBasePath());
         mediaEntry.setPath(newMediaEntry.getPath());

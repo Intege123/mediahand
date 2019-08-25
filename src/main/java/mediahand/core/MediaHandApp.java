@@ -14,6 +14,7 @@ import mediahand.repository.base.Database;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 
 public class MediaHandApp extends Application {
@@ -112,11 +113,23 @@ public class MediaHandApp extends Application {
      *
      * @return the chosen directory
      */
-    public static Optional<File> chooseMediaDirectory() {
+    public static Optional<File> chooseMediaDirectory(final Path initialDirPath) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
+        if (initialDirPath != null) {
+            directoryChooser.setInitialDirectory(initialDirPath.toFile());
+        }
         File dialog = directoryChooser.showDialog(MediaHandApp.getStage());
 
         return Optional.ofNullable(dialog);
+    }
+
+    /**
+     * Opens a dialog to choose a directory of the file system.
+     *
+     * @return the chosen directory
+     */
+    public static Optional<File> chooseMediaDirectory() {
+        return chooseMediaDirectory(null);
     }
 
     public static MediaHandAppController getMediaHandAppController() {
