@@ -3,6 +3,7 @@ package mediahand.vlc;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
@@ -192,7 +193,7 @@ public class JavaFXDirectRenderingScene {
     }
 
     private void onMediaLoaded() {
-        this.contextMenu = buildContextMenu(this.mediaPlayer);
+        buildContextMenu(this.mediaPlayer);
 
         setMediaPlayerEventListener();
 
@@ -321,12 +322,21 @@ public class JavaFXDirectRenderingScene {
         });
     }
 
-    private ContextMenu buildContextMenu(final EmbeddedMediaPlayer mediaPlayer) {
+    private void buildContextMenu(final EmbeddedMediaPlayer mediaPlayer) {
         Menu audioMenu = buildAudioContextMenu(mediaPlayer);
 
         Menu subtitleMenu = buildSubtitleContextMenu(mediaPlayer);
 
-        return new ContextMenu(audioMenu, subtitleMenu);
+        this.contextMenu = new ContextMenu(audioMenu, subtitleMenu);
+
+        if (this.mediaEntry.getSubtitleTrack() != null) {
+            Optional<MenuItem> menuItem = subtitleMenu.getItems().stream().filter(item -> item.getId().equals(this.mediaEntry.getSubtitleTrack())).findFirst();
+            menuItem.ifPresent(item -> setSubtitleTrack(mediaPlayer, Integer.parseInt(this.mediaEntry.getSubtitleTrack()), item));
+        }
+        if (this.mediaEntry.getAudioTrack() != null) {
+            Optional<MenuItem> menuItem = audioMenu.getItems().stream().filter(item -> item.getId().equals(this.mediaEntry.getAudioTrack())).findFirst();
+            menuItem.ifPresent(item -> setAudioTrack(mediaPlayer, Integer.parseInt(this.mediaEntry.getAudioTrack()), item));
+        }
     }
 
     private Menu buildSubtitleContextMenu(EmbeddedMediaPlayer mediaPlayer) {
@@ -344,14 +354,15 @@ public class JavaFXDirectRenderingScene {
         if (trackDescription.id() == mediaPlayer.subpictures().track()) {
             highlightMenuItem(item);
         }
-        item.setOnAction(event -> setSubtitleTrack(mediaPlayer, trackDescription, item));
+        item.setOnAction(event -> setSubtitleTrack(mediaPlayer, trackDescription.id(), item));
         return item;
     }
 
-    private void setSubtitleTrack(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription, MenuItem item) {
+    private void setSubtitleTrack(EmbeddedMediaPlayer mediaPlayer, int trackId, MenuItem item) {
         resetStyleOfCurrentSubtitleTrack(mediaPlayer);
-        mediaPlayer.subpictures().setTrack(trackDescription.id());
+        mediaPlayer.subpictures().setTrack(trackId);
         highlightMenuItem(item);
+        this.mediaEntry.setSubtitleTrack(trackId + "");
     }
 
     private Menu buildAudioContextMenu(EmbeddedMediaPlayer mediaPlayer) {
@@ -369,14 +380,15 @@ public class JavaFXDirectRenderingScene {
         if (trackDescription.id() == mediaPlayer.audio().track()) {
             highlightMenuItem(item);
         }
-        item.setOnAction(event -> setAudioTrack(mediaPlayer, trackDescription, item));
+        item.setOnAction(event -> setAudioTrack(mediaPlayer, trackDescription.id(), item));
         return item;
     }
 
-    private void setAudioTrack(EmbeddedMediaPlayer mediaPlayer, TrackDescription trackDescription, MenuItem item) {
+    private void setAudioTrack(EmbeddedMediaPlayer mediaPlayer, int trackId, MenuItem item) {
         resetStyleOfCurrentAudioTrack(mediaPlayer);
-        mediaPlayer.audio().setTrack(trackDescription.id());
+        mediaPlayer.audio().setTrack(trackId);
         highlightMenuItem(item);
+        this.mediaEntry.setAudioTrack(trackId + "");
     }
 
     private void highlightMenuItem(MenuItem item) {

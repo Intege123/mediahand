@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import mediahand.controller.MediaHandAppController;
 import mediahand.core.MediaHandApp;
@@ -98,9 +99,13 @@ public class MediaLoader {
      */
     private void addSingleMedia(final MediaEntry newMediaEntry) {
         MediaRepository mediaRepository = Database.getMediaRepository();
-        FilteredList<MediaEntry> mediaEntryFilteredList = MediaHandAppController.getMediaEntries()
-                .filtered(m -> m.getTitle().equals(newMediaEntry.getTitle()));
-        if (mediaEntryFilteredList.isEmpty()) {
+        ObservableList<MediaEntry> mediaEntries = MediaHandAppController.getMediaEntries();
+        FilteredList<MediaEntry> mediaEntryFilteredList = null;
+        if (mediaEntries != null) {
+            mediaEntryFilteredList = mediaEntries
+                    .filtered(m -> m.getTitle().equals(newMediaEntry.getTitle()));
+        }
+        if (mediaEntryFilteredList == null || mediaEntryFilteredList.isEmpty()) {
             try {
                 mediaRepository.create(newMediaEntry);
             } catch (SQLException throwables) {
@@ -130,7 +135,7 @@ public class MediaLoader {
         String mediaType = mediaDirectory.getParent().getFileName().toString();
         String relativePath = mediaDirectory.toString().substring(optionalBasePath.get().getPath().length());
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), 50);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), 50, null, null);
     }
 
     private MediaEntry createTempMediaEntry(final Path mediaDirectory, final DirectoryEntry basePath) {
@@ -142,7 +147,7 @@ public class MediaLoader {
             relativePath = relativePath.substring(basePath.getPath().length());
         }
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, 50);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, 50, null, null);
     }
 
     private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {

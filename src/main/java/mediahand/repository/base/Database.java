@@ -116,7 +116,7 @@ public abstract class Database {
                                 "MediaType VARCHAR(255) NOT NULL, WatchState VARCHAR(255) NOT NULL, Rating INT, " +
                                 "Path VARCHAR(255) NOT NULL, CurrentEpisode INT DEFAULT 1 NOT NULL, " +
                                 "Added DATE DEFAULT SYSDATE NOT NULL, EpisodeLength INT NOT NULL, " +
-                                "WatchedDate DATE, WatchNumber INT, Volume INT, dirtable_fk INT, FOREIGN KEY (dirtable_fk) REFERENCES DIRTABLE(id))");
+                                "WatchedDate DATE, WatchNumber INT, Volume INT, Audiotrack VARCHAR(255), Subtitletrack VARCHAR(255), dirtable_fk INT, FOREIGN KEY (dirtable_fk) REFERENCES DIRTABLE(id))");
                 MessageUtil.infoAlert("openMediaTable", "Opened new media table!");
             } catch (SQLException e) {
                 try {

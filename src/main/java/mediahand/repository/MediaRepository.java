@@ -78,7 +78,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try {
             ResultSet result = Database.getStatement().executeQuery(
                     "SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, " +
-                            "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, "
+                            "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, AUDIOTRACK, SUBTITLETRACK, "
                             +
                             "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE, DIRTABLE "
                             +
@@ -98,7 +98,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                         result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
                         result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                         result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
-                        result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"));
+                        result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"), result.getString("AUDIOTRACK"), result.getString("SUBTITLETRACK"));
             } else {
                 MessageUtil.infoAlert("Find media", "No media entry found: " + entry.getTitle());
             }
@@ -114,7 +114,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
 
         ResultSet result = Database.getStatement().executeQuery(
                 "SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, " +
-                        "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, "
+                        "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, AUDIOTRACK, SUBTITLETRACK, "
                         +
                         "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE LEFT JOIN DIRTABLE ON MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID");
         while (result.next()) {
@@ -133,7 +133,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
                     result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                     result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
-                    result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME")));
+                    result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"), result.getString("AUDIOTRACK"), result.getString("SUBTITLETRACK")));
         }
         return mediaEntries;
     }

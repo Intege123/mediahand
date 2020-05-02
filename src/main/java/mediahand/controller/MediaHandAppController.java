@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javafx.collections.FXCollections;
@@ -89,7 +90,7 @@ public class MediaHandAppController {
         });
         this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && newValue != null && !selectedItem.getWatchState().toString().equals(newValue)) {
+            if (selectedItem != null && !Objects.equals(selectedItem.getWatchState().toString(), newValue)) {
                 selectedItem.setWatchState(WatchState.valueOf(newValue));
                 try {
                     Database.getMediaRepository().update(selectedItem);
@@ -100,8 +101,7 @@ public class MediaHandAppController {
         });
         this.watchedEdit.valueProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && (selectedItem.getWatchedDate() == null || newValue == null
-                    || selectedItem.getWatchedDate().isEqual(newValue))) {
+            if (selectedItem != null && !Objects.equals(selectedItem.getWatchedDate(), newValue)) {
                 selectedItem.setWatchedDate(newValue);
                 try {
                     Database.getMediaRepository().update(selectedItem);

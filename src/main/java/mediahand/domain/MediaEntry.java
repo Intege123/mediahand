@@ -84,7 +84,17 @@ public class MediaEntry {
      */
     private int volume;
 
-    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, LocalDate added, int episodeLength, LocalDate watchedDate, int watchedCount, DirectoryEntry basePath, int volume) {
+    /**
+     * The lastly selected audio track.
+     */
+    private String audioTrack;
+
+    /**
+     * The lastly selected subtitle track.
+     */
+    private String subtitleTrack;
+
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, LocalDate added, int episodeLength, LocalDate watchedDate, int watchedCount, DirectoryEntry basePath, int volume, String audioTrack, String subtitleTrack) {
         Check.notNullArgument(title, "title");
 
         this.id = id;
@@ -101,6 +111,8 @@ public class MediaEntry {
         this.watchedCount = watchedCount;
         this.basePath = basePath;
         this.volume = volume;
+        this.audioTrack = audioTrack;
+        this.subtitleTrack = subtitleTrack;
 
         this.available = new File(getAbsolutePath()).exists();
     }
@@ -245,6 +257,22 @@ public class MediaEntry {
         this.volume = volume;
     }
 
+    public String getAudioTrack() {
+        return this.audioTrack;
+    }
+
+    public void setAudioTrack(final String audioTrack) {
+        this.audioTrack = audioTrack;
+    }
+
+    public String getSubtitleTrack() {
+        return this.subtitleTrack;
+    }
+
+    public void setSubtitleTrack(final String subtitleTrack) {
+        this.subtitleTrack = subtitleTrack;
+    }
+
     @Override
     public String toString() {
         return this.title;
@@ -252,8 +280,12 @@ public class MediaEntry {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         MediaEntry that = (MediaEntry) o;
         return this.id == that.id &&
                 this.episodeNumber == that.episodeNumber &&
@@ -264,7 +296,8 @@ public class MediaEntry {
                 this.available == that.available &&
                 this.volume == that.volume &&
                 this.title.equals(that.title) &&
-                Objects.equals(this.mediaType, that.mediaType) &&
+                Objects.equals(this.audioTrack, that.audioTrack) &&
+                Objects.equals(this.subtitleTrack, that.subtitleTrack) &&
                 this.watchState == that.watchState &&
                 Objects.equals(this.path, that.path) &&
                 Objects.equals(this.added, that.added) &&
