@@ -91,7 +91,8 @@ public class MediaLoader {
 
     /**
      * Add a new {@link MediaEntry} to the database if a {@link MediaEntry} with the same name does not exist. Else update
-     * the {@link MediaEntry}'s episode number.
+     * the {@link MediaEntry}'s episode number. Update the base path if the media entry is currently not available
+     * (because of a changed base path).
      *
      * @param newMediaEntry the {@link MediaEntry} to add
      */
@@ -107,7 +108,13 @@ public class MediaLoader {
             }
         } else {
             MediaEntry mediaEntry = mediaEntryFilteredList.get(0);
-            updateMediaEntryEpisodes(newMediaEntry, mediaRepository, mediaEntry);
+            if (!mediaEntry.isAvailable()) {
+                mediaEntry.setBasePath(newMediaEntry.getBasePath());
+                mediaEntry.setAvailable(true);
+                updateMediaEntry(mediaEntry, mediaRepository);
+            } else {
+                updateMediaEntryEpisodes(newMediaEntry, mediaRepository, mediaEntry);
+            }
         }
     }
 
@@ -143,6 +150,14 @@ public class MediaLoader {
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
+        try {
+            mediaRepository.update(mediaEntry);
+        } catch (SQLException throwables) {
+            MessageUtil.warningAlert(throwables);
+        }
+    }
+
+    private void updateMediaEntry(final MediaEntry mediaEntry, final MediaRepository mediaRepository) {
         try {
             mediaRepository.update(mediaEntry);
         } catch (SQLException throwables) {

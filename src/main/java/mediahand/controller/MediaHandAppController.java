@@ -107,7 +107,12 @@ public class MediaHandAppController {
 
     public void playEmbeddedMedia() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem.isAvailable()) {
+        if (selectedItem == null) {
+            MessageUtil.infoAlert("Play media", "Please select a media entry.");
+        } else if (!selectedItem.isAvailable()) {
+            MessageUtil.infoAlert("Play media: "
+                    + selectedItem.getAbsolutePath(), "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
+        } else {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
                 JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file, selectedItem);
@@ -117,14 +122,17 @@ public class MediaHandAppController {
                 MessageUtil.warningAlert(e);
                 changeMediaLocation();
             }
-        } else {
-            MessageUtil.infoAlert("Play media", "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
         }
     }
 
     private void playMedia() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && selectedItem.isAvailable()) {
+        if (selectedItem == null) {
+            MessageUtil.infoAlert("Play media", "Please select a media entry.");
+        } else if (!selectedItem.isAvailable()) {
+            MessageUtil.infoAlert("Play media: "
+                    + selectedItem.getAbsolutePath(), "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
+        } else {
             Desktop desktop = Desktop.getDesktop();
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
@@ -137,8 +145,6 @@ public class MediaHandAppController {
                 MessageUtil.warningAlert(e);
                 changeMediaLocation();
             }
-        } else {
-            MessageUtil.infoAlert("Play media", "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
         }
     }
 
