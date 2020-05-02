@@ -1,5 +1,10 @@
 package mediahand.core;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Optional;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -11,11 +16,7 @@ import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.SettingsEntry;
 import mediahand.repository.base.Database;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Optional;
+import mediahand.utils.MessageUtil;
 
 public class MediaHandApp extends Application {
 
@@ -67,10 +68,7 @@ public class MediaHandApp extends Application {
 
         MediaHandApp.stage.show();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            Database.closeConnections();
-            System.out.println("Program closed");
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(Database::closeConnections));
     }
 
     private void initDatabase() {
@@ -89,7 +87,7 @@ public class MediaHandApp extends Application {
             MediaHandApp.mediaHandAppController = loader.getController();
             mediaHandAppController.init();
         } catch (IOException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
         }
     }
 

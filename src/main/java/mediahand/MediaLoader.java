@@ -1,5 +1,15 @@
 package mediahand;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
 import javafx.collections.transformation.FilteredList;
 import mediahand.controller.MediaHandAppController;
 import mediahand.core.MediaHandApp;
@@ -7,16 +17,8 @@ import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.MediaRepository;
 import mediahand.repository.base.Database;
+import mediahand.utils.MessageUtil;
 import utils.Check;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Loads media into the database.
@@ -72,7 +74,7 @@ public class MediaLoader {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                MessageUtil.warningAlert(e);
             }
         }
     }
@@ -82,13 +84,13 @@ public class MediaLoader {
         Optional<File> optionalDir = MediaHandApp.chooseMediaDirectory(Path.of(basePath.getPath()));
         if (optionalDir.isPresent()) {
             File dir = optionalDir.get();
-            MediaEntry tempMediaEntry = createTempMediaEntry(dir.toPath(), basePath);
+            MediaEntry tempMediaEntry = createTempMediaEntry(dir.toPath(), null);
             addSingleMedia(tempMediaEntry);
         }
     }
 
     /**
-     * Add a new {@link MediaEntry} to the database if a {@link MediaEntry} with the same name in that base path does not exist. Else update
+     * Add a new {@link MediaEntry} to the database if a {@link MediaEntry} with the same name does not exist. Else update
      * the {@link MediaEntry}'s episode number.
      *
      * @param newMediaEntry the {@link MediaEntry} to add
@@ -98,7 +100,11 @@ public class MediaLoader {
         FilteredList<MediaEntry> mediaEntryFilteredList = MediaHandAppController.getMediaEntries()
                 .filtered(m -> m.getTitle().equals(newMediaEntry.getTitle()));
         if (mediaEntryFilteredList.isEmpty()) {
-            mediaRepository.create(newMediaEntry);
+            try {
+                mediaRepository.create(newMediaEntry);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
         } else {
             MediaEntry mediaEntry = mediaEntryFilteredList.get(0);
             updateMediaEntryEpisodes(newMediaEntry, mediaRepository, mediaEntry);
@@ -117,16 +123,19 @@ public class MediaLoader {
         String mediaType = mediaDirectory.getParent().getFileName().toString();
         String relativePath = mediaDirectory.toString().substring(optionalBasePath.get().getPath().length());
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), false, 50);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, optionalBasePath.get(), 50);
     }
 
     private MediaEntry createTempMediaEntry(final Path mediaDirectory, final DirectoryEntry basePath) {
         String mediaTitle = mediaDirectory.getFileName().toString();
         int episodeNumber = getMediaCount(mediaDirectory.toFile());
         String mediaType = mediaDirectory.getParent().getFileName().toString();
-        String relativePath = mediaDirectory.toString().substring(basePath.getPath().length());
+        String relativePath = mediaDirectory.toString();
+        if (basePath != null) {
+            relativePath = relativePath.substring(basePath.getPath().length());
+        }
         return new MediaEntry(0, mediaTitle, episodeNumber, mediaType,
-                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, false, 50);
+                WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, 50);
     }
 
     private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
@@ -134,7 +143,11 @@ public class MediaLoader {
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
-        mediaRepository.update(mediaEntry);
+        try {
+            mediaRepository.update(mediaEntry);
+        } catch (SQLException throwables) {
+            MessageUtil.warningAlert(throwables);
+        }
     }
 
     public void updateMediaEntry(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
@@ -146,7 +159,11 @@ public class MediaLoader {
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
-        mediaRepository.update(mediaEntry);
+        try {
+            mediaRepository.update(mediaEntry);
+        } catch (SQLException throwables) {
+            MessageUtil.warningAlert(throwables);
+        }
     }
 
     public File getEpisode(final String absolutePath, final int episode) throws IOException {
@@ -156,11 +173,9 @@ public class MediaLoader {
             if (files != null && files.length > episode - 1) {
                 return files[episode - 1];
             } else {
-                System.err.println("Episode " + episode + " does not exist in \"" + absolutePath + "\".");
                 throw new IOException("Episode " + episode + " does not exist in \"" + absolutePath + "\".");
             }
         } else {
-            System.err.println("\"" + absolutePath + "\" does not exist or is not a directory.");
             throw new IOException("\"" + absolutePath + "\" does not exist or is not a directory.");
         }
     }

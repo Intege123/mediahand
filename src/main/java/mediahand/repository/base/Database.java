@@ -1,13 +1,14 @@
 package mediahand.repository.base;
 
-import mediahand.repository.BasePathRepository;
-import mediahand.repository.MediaRepository;
-import mediahand.repository.SettingsRepository;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import mediahand.repository.BasePathRepository;
+import mediahand.repository.MediaRepository;
+import mediahand.repository.SettingsRepository;
+import mediahand.utils.MessageUtil;
 
 /*Tables:
  *
@@ -68,7 +69,7 @@ public abstract class Database {
         try {
             Class.forName("org.hsqldb.jdbc.JDBCDriver");
         } catch (ClassNotFoundException e) {
-            System.err.println("Driver not found!");
+            MessageUtil.warningAlert(e, "Driver not found!");
             System.exit(-1);
         }
 
@@ -79,7 +80,7 @@ public abstract class Database {
             connection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseName + "; shutdown = true", username, password);
             statement = connection.createStatement();
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
             System.exit(-1);
         }
     }
@@ -91,14 +92,14 @@ public abstract class Database {
         try {
             statement.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
         }
 
         if (connection != null) {
             try {
                 connection.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                MessageUtil.warningAlert(e);
             }
         }
     }
@@ -109,22 +110,23 @@ public abstract class Database {
     public static void openMediaTable() {
         if (statement != null) {
             try {
-                statement.execute("CREATE TABLE mediaTable(id INT IDENTITY PRIMARY KEY, Title VARCHAR(255) UNIQUE, Episodes INT NOT NULL, " +
-                        "MediaType VARCHAR(255) NOT NULL, WatchState VARCHAR(255) NOT NULL, Rating INT, " +
-                        "Path VARCHAR(255) NOT NULL, CurrentEpisode INT DEFAULT 1 NOT NULL, " +
-                        "Added DATE DEFAULT SYSDATE NOT NULL, EpisodeLength INT NOT NULL, " +
-                        "WatchedDate DATE, WatchNumber INT, Volume INT, dirtable_fk INT NOT NULL, FOREIGN KEY (dirtable_fk) REFERENCES DIRTABLE(id))");
-                System.out.println("Opened new media table!");
+                statement.execute(
+                        "CREATE TABLE mediaTable(id INT IDENTITY PRIMARY KEY, Title VARCHAR(255) UNIQUE, Episodes INT NOT NULL, "
+                                +
+                                "MediaType VARCHAR(255) NOT NULL, WatchState VARCHAR(255) NOT NULL, Rating INT, " +
+                                "Path VARCHAR(255) NOT NULL, CurrentEpisode INT DEFAULT 1 NOT NULL, " +
+                                "Added DATE DEFAULT SYSDATE NOT NULL, EpisodeLength INT NOT NULL, " +
+                                "WatchedDate DATE, WatchNumber INT, Volume INT, dirtable_fk INT, FOREIGN KEY (dirtable_fk) REFERENCES DIRTABLE(id))");
+                MessageUtil.infoAlert("openMediaTable", "Opened new media table!");
             } catch (SQLException e) {
                 try {
                     statement.execute("TABLE mediaTable");
                 } catch (SQLException e2) {
-                    System.err.println("Could not open mediaTable!");
-                    e2.printStackTrace();
+                    MessageUtil.warningAlert(e2, "Could not open mediaTable!");
                 }
             }
         } else {
-            System.err.println("Could not open mediaTable. Statement is null!");
+            MessageUtil.warningAlert("openMediaTable", "Could not open mediaTable. Statement is null!");
         }
     }
 
@@ -136,13 +138,12 @@ public abstract class Database {
             try {
                 statement.execute("CREATE TABLE dirTable(ID INT IDENTITY PRIMARY KEY, " +
                         "PATH VARCHAR(255) NOT NULL)");
-                System.out.println("Opened new directory table!");
+                MessageUtil.infoAlert("openDirTable", "Opened new directory table!");
             } catch (SQLException e) {
                 try {
                     statement.execute("TABLE dirTable");
                 } catch (SQLException e2) {
-                    System.err.println("Could not open dirTable!");
-                    e2.printStackTrace();
+                    MessageUtil.warningAlert(e2, "Could not open dirTable!");
                 }
             }
         }
@@ -151,15 +152,16 @@ public abstract class Database {
     public static void openSettingsTable() {
         if (statement != null) {
             try {
-                statement.execute("CREATE TABLE settingsTable(ID INT IDENTITY PRIMARY KEY, PROFILE VARCHAR(255) NOT NULL UNIQUE, " +
-                        "WIDTH INT NOT NULL, HEIGHT INT NOT NULL)");
-                System.out.println("Opened new settings table!");
+                statement.execute(
+                        "CREATE TABLE settingsTable(ID INT IDENTITY PRIMARY KEY, PROFILE VARCHAR(255) NOT NULL UNIQUE, "
+                                +
+                                "WIDTH INT NOT NULL, HEIGHT INT NOT NULL)");
+                MessageUtil.infoAlert("openSettingsTable", "Opened new settings table!");
             } catch (SQLException e) {
                 try {
                     statement.execute("TABLE settingsTable");
                 } catch (SQLException e2) {
-                    System.err.println("Could not open dirTable!");
-                    e2.printStackTrace();
+                    MessageUtil.warningAlert(e2, "Could not open dirTable!");
                 }
             }
         }
@@ -171,7 +173,7 @@ public abstract class Database {
             statement.execute("DROP TABLE dirTable");
             statement.execute("DROP TABLE settingsTable");
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e, "Could not drop tables!");
         }
     }
 

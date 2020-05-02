@@ -1,12 +1,22 @@
 package mediahand.controller;
 
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -14,14 +24,8 @@ import mediahand.WatchState;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.Database;
+import mediahand.utils.MessageUtil;
 import mediahand.vlc.JavaFXDirectRenderingScene;
-
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
 
 public class MediaHandAppController {
 
@@ -39,13 +43,15 @@ public class MediaHandAppController {
         addWatchStateColumn();
         addWatchStateFilter();
         addTitleFieldFilterListener();
-        fillTableView(Database.getMediaRepository().findAll());
+        try {
+            fillTableView(Database.getMediaRepository().findAll());
+        } catch (SQLException throwables) {
+            MessageUtil.warningAlert(throwables);
+        }
     }
 
     private void addTitleFieldFilterListener() {
-        this.titleFilter.textProperty().addListener((observable, oldValue, newValue) -> {
-            MediaHandAppController.filteredData.setPredicate(m -> filter(m, newValue));
-        });
+        this.titleFilter.textProperty().addListener((observable, oldValue, newValue) -> MediaHandAppController.filteredData.setPredicate(m -> filter(m, newValue)));
     }
 
     private void addWatchStateFilter() {
@@ -72,7 +78,11 @@ public class MediaHandAppController {
         watchStateColumn.setOnEditCommit(event -> {
             MediaEntry mediaEntry = event.getRowValue();
             mediaEntry.setWatchState(WatchState.valueOf(event.getNewValue()));
-            Database.getMediaRepository().update(mediaEntry);
+            try {
+                Database.getMediaRepository().update(mediaEntry);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
         });
 
         this.mediaTableView.setEditable(true);
@@ -99,13 +109,16 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.isAvailable()) {
             try {
-                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisodeNumber());
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
                 JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file, selectedItem);
                 String windowTitle = selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber();
                 javaFXDirectRenderingScene.start(MediaHandApp.getStage(), windowTitle);
             } catch (IOException e) {
-                changeMediaLocation(selectedItem);
+                MessageUtil.warningAlert(e);
+                changeMediaLocation();
             }
+        } else {
+            MessageUtil.infoAlert("Play media", "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
         }
     }
 
@@ -114,20 +127,23 @@ public class MediaHandAppController {
         if (selectedItem != null && selectedItem.isAvailable()) {
             Desktop desktop = Desktop.getDesktop();
             try {
-                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getBasePath().getPath() + selectedItem.getPath(), selectedItem.getCurrentEpisodeNumber());
+                File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
                 try {
                     desktop.open(file);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    MessageUtil.warningAlert(e);
                 }
             } catch (IOException e) {
-                changeMediaLocation(selectedItem);
+                MessageUtil.warningAlert(e);
+                changeMediaLocation();
             }
+        } else {
+            MessageUtil.infoAlert("Play media", "Selected media is not available. Deselect 'Show All' to show only media of connected media directories.");
         }
     }
 
-    private void changeMediaLocation(final MediaEntry mediaEntry) {
-        Optional<File> directory = MediaHandApp.chooseMediaDirectory(Path.of(mediaEntry.getBasePath().getPath()));
+    private void changeMediaLocation() {
+        Optional<File> directory = MediaHandApp.chooseMediaDirectory();
         if (directory.isPresent()) {
             MediaEntry updatedMediaEntry = MediaHandApp.getMediaLoader().createTempMediaEntry(directory.get().toPath());
             updateMedia(updatedMediaEntry);
@@ -145,7 +161,11 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() + 1);
-            Database.getMediaRepository().update(selectedItem);
+            try {
+                Database.getMediaRepository().update(selectedItem);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
         }
     }
 
@@ -153,7 +173,11 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() > 1) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() - 1);
-            Database.getMediaRepository().update(selectedItem);
+            try {
+                Database.getMediaRepository().update(selectedItem);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
         }
     }
 

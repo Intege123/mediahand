@@ -1,14 +1,15 @@
 package mediahand.repository;
 
-import mediahand.domain.DirectoryEntry;
-import mediahand.repository.base.BaseRepository;
-import mediahand.repository.base.Database;
-import utils.Check;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import mediahand.domain.DirectoryEntry;
+import mediahand.repository.base.BaseRepository;
+import mediahand.repository.base.Database;
+import mediahand.utils.MessageUtil;
+import utils.Check;
 
 public class BasePathRepository implements BaseRepository<DirectoryEntry> {
 
@@ -21,11 +22,11 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
                 Database.getStatement().execute("INSERT INTO dirTable (Path) VALUES('" + entry.getPath() + "')");
                 return find(entry);
             } else {
-                System.out.println("Directory \"" + entry.getPath() + "\" already exists");
+                MessageUtil.infoAlert("create directory", "Directory \"" + entry.getPath() + "\" already exists");
                 return directoryEntry;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
         }
         return null;
     }
@@ -48,7 +49,7 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
                 return new DirectoryEntry(result.getInt("ID"), result.getString("PATH"));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
         }
         return null;
     }
@@ -63,7 +64,7 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
                 directoryEntries.add(new DirectoryEntry(result.getInt("ID"), result.getString("PATH")));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            MessageUtil.warningAlert(e);
         }
         return directoryEntries;
     }

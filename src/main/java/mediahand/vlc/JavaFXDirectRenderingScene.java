@@ -1,5 +1,12 @@
 package mediahand.vlc;
 
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.sql.SQLException;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Semaphore;
+
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -23,6 +30,7 @@ import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.Database;
+import mediahand.utils.MessageUtil;
 import mediahand.vlc.event.StopRenderingSceneHandler;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -35,12 +43,6 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCallbackAdapter;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Semaphore;
 
 public class JavaFXDirectRenderingScene {
 
@@ -162,7 +164,11 @@ public class JavaFXDirectRenderingScene {
         stopTimer();
         this.timer.cancel();
 
-        Database.getMediaRepository().update(this.mediaEntry);
+        try {
+            Database.getMediaRepository().update(this.mediaEntry);
+        } catch (SQLException throwables) {
+            MessageUtil.warningAlert(throwables);
+        }
 
         this.mediaPlayer.controls().stop();
         this.mediaPlayer.release();
@@ -205,9 +211,7 @@ public class JavaFXDirectRenderingScene {
 
             @Override
             public void finished(MediaPlayer mediaPlayer) {
-                Platform.runLater(() -> {
-                    onMediaFinished();
-                });
+                Platform.runLater(() -> onMediaFinished());
             }
         });
     }
@@ -340,9 +344,7 @@ public class JavaFXDirectRenderingScene {
         if (trackDescription.id() == mediaPlayer.subpictures().track()) {
             highlightMenuItem(item);
         }
-        item.setOnAction(event -> {
-            setSubtitleTrack(mediaPlayer, trackDescription, item);
-        });
+        item.setOnAction(event -> setSubtitleTrack(mediaPlayer, trackDescription, item));
         return item;
     }
 
@@ -367,9 +369,7 @@ public class JavaFXDirectRenderingScene {
         if (trackDescription.id() == mediaPlayer.audio().track()) {
             highlightMenuItem(item);
         }
-        item.setOnAction(event -> {
-            setAudioTrack(mediaPlayer, trackDescription, item);
-        });
+        item.setOnAction(event -> setAudioTrack(mediaPlayer, trackDescription, item));
         return item;
     }
 
@@ -481,7 +481,7 @@ public class JavaFXDirectRenderingScene {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                MessageUtil.warningAlert(e);
             }
         }
         return true;

@@ -1,12 +1,13 @@
 package mediahand.domain;
 
+import java.io.File;
+import java.util.Date;
+import java.util.Objects;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import mediahand.WatchState;
 import utils.Check;
-
-import java.util.Date;
-import java.util.Objects;
 
 public class MediaEntry {
 
@@ -85,11 +86,7 @@ public class MediaEntry {
      */
     private int volume;
 
-    public MediaEntry(final String title, final String path, final DirectoryEntry basePath) {
-        this(0, title, 0, null, WatchState.WANT_TO_WATCH, 0, path, 0, null, 0, null, 0, basePath, false, 50);
-    }
-
-    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, boolean available, int volume) {
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, int volume) {
         Check.notNullArgument(title, "title");
 
         this.id = id;
@@ -105,8 +102,25 @@ public class MediaEntry {
         this.watchedDate = watchedDate;
         this.watchedCount = watchedCount;
         this.basePath = basePath;
-        this.available = available;
         this.volume = volume;
+
+        this.available = new File(getAbsolutePath()).exists();
+    }
+
+    public String getBasePathId() {
+        if (this.basePath != null) {
+            return this.basePath.getId() + "";
+        } else {
+            return null;
+        }
+    }
+
+    public String getAbsolutePath() {
+        if (this.basePath != null) {
+            return this.getBasePath().getPath() + this.path;
+        } else {
+            return this.path;
+        }
     }
 
     public int getId() {
