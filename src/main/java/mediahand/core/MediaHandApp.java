@@ -62,7 +62,7 @@ public class MediaHandApp extends Application {
         MediaHandApp.scene = new Scene(this.rootLayout);
         setDefaultScene();
 
-        this.settingsEntry = Database.getSettingsRepository().create(new SettingsEntry("default", (int) MediaHandApp.stage.getWidth(), (int) MediaHandApp.stage.getHeight(), false, false, null));
+        this.settingsEntry = Database.getSettingsRepository().create(new SettingsEntry("default", 1200, 800, false, false, null));
         MediaHandApp.stage.setWidth(this.settingsEntry.getWindowWidth());
         MediaHandApp.stage.setHeight(this.settingsEntry.getWindowHeight());
 
