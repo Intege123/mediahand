@@ -1,11 +1,9 @@
 package mediahand.domain;
 
 import java.io.File;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import mediahand.WatchState;
 import utils.Check;
 
@@ -54,7 +52,7 @@ public class MediaEntry {
     /**
      * Date when the media was added to the database.
      */
-    private Date added;
+    private LocalDate added;
 
     /**
      * Average length of the media per episode in minutes.
@@ -64,7 +62,7 @@ public class MediaEntry {
     /**
      * Date when the user first watched the media.
      */
-    private Date watchedDate;
+    private LocalDate watchedDate;
 
     /**
      * Count how many times the user watched the media.
@@ -86,7 +84,7 @@ public class MediaEntry {
      */
     private int volume;
 
-    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, Date added, int episodeLength, Date watchedDate, int watchedCount, DirectoryEntry basePath, int volume) {
+    public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, LocalDate added, int episodeLength, LocalDate watchedDate, int watchedCount, DirectoryEntry basePath, int volume) {
         Check.notNullArgument(title, "title");
 
         this.id = id;
@@ -151,8 +149,8 @@ public class MediaEntry {
         this.mediaType = mediaType;
     }
 
-    public StringProperty getWatchState() {
-        return new SimpleStringProperty(this.watchState.toString());
+    public WatchState getWatchState() {
+        return this.watchState;
     }
 
     public void setWatchState(WatchState watchState) {
@@ -187,11 +185,11 @@ public class MediaEntry {
         return this.currentEpisode + "/" + this.episodeNumber;
     }
 
-    public Date getAdded() {
+    public LocalDate getAdded() {
         return this.added;
     }
 
-    public void setAdded(Date added) {
+    public void setAdded(LocalDate added) {
         this.added = added;
     }
 
@@ -203,11 +201,11 @@ public class MediaEntry {
         this.episodeLength = episodeLength;
     }
 
-    public Date getWatchedDate() {
+    public LocalDate getWatchedDate() {
         return this.watchedDate;
     }
 
-    public void setWatchedDate(Date watchedDate) {
+    public void setWatchedDate(LocalDate watchedDate) {
         this.watchedDate = watchedDate;
     }
 

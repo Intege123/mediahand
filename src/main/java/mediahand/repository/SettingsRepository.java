@@ -11,6 +11,7 @@ import mediahand.utils.MessageUtil;
 import utils.Check;
 
 public class SettingsRepository implements BaseRepository<SettingsEntry> {
+
     @Override
     public SettingsEntry create(SettingsEntry entry) {
         Check.notNullArgument(entry, "entry");
@@ -69,4 +70,5 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
     public List<SettingsEntry> findAll() {
         return null;
     }
+    
 }

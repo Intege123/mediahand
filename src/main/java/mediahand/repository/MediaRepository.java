@@ -1,8 +1,10 @@
 package mediahand.repository;
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +28,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     "INSERT INTO mediaTable (Title, Episodes, MediaType, WatchState, Path, EpisodeLength, Volume, DIRTABLE_FK) "
                             +
                             "VALUES('" + entry.getTitle() + "', " + entry.getEpisodeNumber() + ", '"
-                            + entry.getMediaType() + "', '" + entry.getWatchState().getValue() + "', '" +
+                            + entry.getMediaType() + "', '" + entry.getWatchState() + "', '" +
                             entry.getPath() + "', " + entry.getEpisodeLength() + ", " + entry.getVolume() + ", "
                             + entry.getBasePathId() + ")");
         } catch (SQLIntegrityConstraintViolationException e) {
@@ -42,10 +44,11 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
                     entry.getEpisodeNumber() + "', MEDIATYPE = '" + entry.getMediaType() + "', WATCHSTATE = '"
-                    + entry.getWatchState().getValue() + "', CURRENTEPISODE = '" +
+                    + entry.getWatchState() + "', CURRENTEPISODE = '" +
                     entry.getCurrentEpisodeNumber() + "', Volume='" + entry.getVolume() + "', DIRTABLE_FK = "
                     + entry.getBasePathId() + ", PATH = '" + entry.getPath() +
-                    "' WHERE ID = '" + entry.getId() + "'");
+                    "', Rating=" + entry.getRating() + ", WatchNumber=" + entry.getWatchedCount() + " WHERE ID = '"
+                    + entry.getId() + "'");
             MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLException e) {
             throw new SQLException("Could not update media entry: " + entry.getTitle(), e);
@@ -81,10 +84,15 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                 if (dirtable_path != null) {
                     directoryEntry = new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path);
                 }
+                Date watchedDate = result.getDate("WATCHEDDATE");
+                LocalDate localWatchedDate = null;
+                if (watchedDate != null) {
+                    localWatchedDate = watchedDate.toLocalDate();
+                }
                 return new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
                         result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
                         result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
-                        result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
+                        result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
                         result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"));
             } else {
                 MessageUtil.infoAlert("Find media", "No media entry found: " + entry.getTitle());
@@ -111,10 +119,15 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
             if (dirtable_path != null) {
                 directoryEntry = new DirectoryEntry(result.getInt("dirtable_id"), dirtable_path);
             }
+            Date watchedDate = result.getDate("WATCHEDDATE");
+            LocalDate localWatchedDate = null;
+            if (watchedDate != null) {
+                localWatchedDate = watchedDate.toLocalDate();
+            }
             mediaEntries.add(new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
                     result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
                     result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
-                    result.getDate("ADDED"), result.getInt("EPISODELENGTH"), result.getDate("WATCHEDDATE"),
+                    result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
                     result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME")));
         }
         return mediaEntries;

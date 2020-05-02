@@ -4,6 +4,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,10 +15,10 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import mediahand.WatchState;
@@ -39,10 +40,75 @@ public class MediaHandAppController {
     public CheckBox showAllCheckbox;
     public CheckBox autoContinueCheckbox;
 
+    public ComboBox<String> watchStateEdit;
+    public ComboBox<Integer> ratingEdit;
+    public DatePicker watchedEdit;
+    public ComboBox<Integer> episodeEdit;
+
     public void init() {
-        addWatchStateColumn();
         addWatchStateFilter();
         addTitleFieldFilterListener();
+        this.watchStateEdit.setItems(FXCollections.observableArrayList(WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
+        this.ratingEdit.setItems(FXCollections.observableArrayList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        this.mediaTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                this.watchStateEdit.getSelectionModel().select(newValue.getWatchState().toString());
+                this.ratingEdit.getSelectionModel().select(newValue.getRating());
+                if (newValue.getEpisodeNumber() != this.episodeEdit.getItems().size()) {
+                    List<Integer> episodes = new ArrayList<>();
+                    for (int i = 0; i < newValue.getEpisodeNumber(); i++) {
+                        episodes.add(i + 1);
+                    }
+                    this.episodeEdit.setItems(FXCollections.observableArrayList(episodes));
+                }
+                this.episodeEdit.getSelectionModel().select(newValue.getCurrentEpisodeNumber() - 1);
+                this.watchedEdit.setValue(newValue.getWatchedDate());
+            }
+        });
+        this.ratingEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null && newValue != null) {
+                selectedItem.setRating(newValue);
+                try {
+                    Database.getMediaRepository().update(selectedItem);
+                } catch (SQLException throwables) {
+                    MessageUtil.warningAlert(throwables);
+                }
+            }
+        });
+        this.episodeEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null && newValue != null) {
+                selectedItem.setCurrentEpisodeNumber(newValue);
+                try {
+                    Database.getMediaRepository().update(selectedItem);
+                } catch (SQLException throwables) {
+                    MessageUtil.warningAlert(throwables);
+                }
+            }
+        });
+        this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null && newValue != null) {
+                selectedItem.setWatchState(WatchState.valueOf(newValue));
+                try {
+                    Database.getMediaRepository().update(selectedItem);
+                } catch (SQLException throwables) {
+                    MessageUtil.warningAlert(throwables);
+                }
+            }
+        });
+        this.watchedEdit.valueProperty().addListener((observable, oldValue, newValue) -> {
+            MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null && newValue != null) {
+                selectedItem.setWatchedDate(newValue);
+                try {
+                    Database.getMediaRepository().update(selectedItem);
+                } catch (SQLException throwables) {
+                    MessageUtil.warningAlert(throwables);
+                }
+            }
+        });
         try {
             fillTableView(Database.getMediaRepository().findAll());
         } catch (SQLException throwables) {
@@ -67,27 +133,6 @@ public class MediaHandAppController {
 
     public void onPlayButton(ActionEvent actionEvent) {
         playEmbeddedMedia();
-    }
-
-    private void addWatchStateColumn() {
-        TableColumn<MediaEntry, String> watchStateColumn = new TableColumn<>("Watch State");
-        watchStateColumn.prefWidthProperty().bind(this.mediaTableView.widthProperty().multiply(0.15).subtract(22));
-        watchStateColumn.setMaxWidth(Integer.MAX_VALUE);
-        watchStateColumn.setCellValueFactory(cellData -> cellData.getValue().getWatchState());
-        watchStateColumn.setCellFactory(ComboBoxTableCell.forTableColumn(new String[]{WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()}));
-        watchStateColumn.setOnEditCommit(event -> {
-            MediaEntry mediaEntry = event.getRowValue();
-            mediaEntry.setWatchState(WatchState.valueOf(event.getNewValue()));
-            try {
-                Database.getMediaRepository().update(mediaEntry);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
-        });
-
-        this.mediaTableView.setEditable(true);
-
-        this.mediaTableView.getColumns().add(watchStateColumn);
     }
 
     public void fillTableView(List<MediaEntry> mediaEntries) {
@@ -222,4 +267,27 @@ public class MediaHandAppController {
         return false;
     }
 
+    public void decreaseWatched(final ActionEvent actionEvent) {
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null && selectedItem.getWatchedCount() > 0) {
+            selectedItem.setWatchedCount(selectedItem.getWatchedCount() - 1);
+            try {
+                Database.getMediaRepository().update(selectedItem);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
+        }
+    }
+
+    public void increaseWatched(final ActionEvent actionEvent) {
+        MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            selectedItem.setWatchedCount(selectedItem.getWatchedCount() + 1);
+            try {
+                Database.getMediaRepository().update(selectedItem);
+            } catch (SQLException throwables) {
+                MessageUtil.warningAlert(throwables);
+            }
+        }
+    }
 }
