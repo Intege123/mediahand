@@ -12,6 +12,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import mediahand.MediaLoader;
+import mediahand.WatchState;
 import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.SettingsEntry;
@@ -40,19 +41,20 @@ public class MediaHandApp extends Application {
         initRootLayout();
 
         showMediaHand();
+
+        applyFilterSettings();
     }
 
     @Override
     public void stop() {
         int width = (int) MediaHandApp.stage.getWidth();
         int height = (int) MediaHandApp.stage.getHeight();
-        if (this.settingsEntry == null) {
-            Database.getSettingsRepository().create(new SettingsEntry("default", width, height));
-        } else {
-            this.settingsEntry.setWindowWidth(width);
-            this.settingsEntry.setWindowHeight(height);
-            Database.getSettingsRepository().update(this.settingsEntry);
-        }
+        this.settingsEntry.setWindowWidth(width);
+        this.settingsEntry.setWindowHeight(height);
+        this.settingsEntry.setAutoContinue(mediaHandAppController.autoContinueCheckbox.isSelected());
+        this.settingsEntry.setShowAll(mediaHandAppController.showAllCheckbox.isSelected());
+        this.settingsEntry.setWatchState(WatchState.lookupByName(mediaHandAppController.watchStateFilter.getSelectionModel().getSelectedItem()));
+        Database.getSettingsRepository().update(this.settingsEntry);
     }
 
     private void initRootLayout() throws IOException {
@@ -60,11 +62,9 @@ public class MediaHandApp extends Application {
         MediaHandApp.scene = new Scene(this.rootLayout);
         setDefaultScene();
 
-        this.settingsEntry = Database.getSettingsRepository().find("default");
-        if (this.settingsEntry != null) {
-            MediaHandApp.stage.setWidth(this.settingsEntry.getWindowWidth());
-            MediaHandApp.stage.setHeight(this.settingsEntry.getWindowHeight());
-        }
+        this.settingsEntry = Database.getSettingsRepository().create(new SettingsEntry("default", (int) MediaHandApp.stage.getWidth(), (int) MediaHandApp.stage.getHeight(), false, false, null));
+        MediaHandApp.stage.setWidth(this.settingsEntry.getWindowWidth());
+        MediaHandApp.stage.setHeight(this.settingsEntry.getWindowHeight());
 
         MediaHandApp.stage.show();
 
@@ -89,6 +89,13 @@ public class MediaHandApp extends Application {
         } catch (IOException e) {
             MessageUtil.warningAlert(e);
         }
+    }
+
+    private void applyFilterSettings() {
+        mediaHandAppController.autoContinueCheckbox.setSelected(this.settingsEntry.isAutoContinue());
+        mediaHandAppController.showAllCheckbox.setSelected(this.settingsEntry.isShowAll());
+        mediaHandAppController.watchStateFilter.getSelectionModel().select(this.settingsEntry.getWatchStateValue());
+        mediaHandAppController.onFilter(null);
     }
 
     public static void setDefaultScene() {

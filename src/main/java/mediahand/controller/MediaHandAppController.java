@@ -60,6 +60,7 @@ public class MediaHandAppController {
                     for (int i = 0; i < newValue.getEpisodeNumber(); i++) {
                         episodes.add(i + 1);
                     }
+                    this.episodeEdit.getSelectionModel().select(null);
                     this.episodeEdit.setItems(FXCollections.observableArrayList(episodes));
                 }
                 this.episodeEdit.getSelectionModel().select(newValue.getCurrentEpisodeNumber() - 1);
@@ -91,7 +92,7 @@ public class MediaHandAppController {
         this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !Objects.equals(selectedItem.getWatchState().toString(), newValue)) {
-                selectedItem.setWatchState(WatchState.valueOf(newValue));
+                selectedItem.setWatchState(WatchState.lookupByName(newValue));
                 try {
                     Database.getMediaRepository().update(selectedItem);
                 } catch (SQLException throwables) {

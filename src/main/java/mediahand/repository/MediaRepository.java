@@ -95,7 +95,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     localWatchedDate = watchedDate.toLocalDate();
                 }
                 return new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
-                        result.getString("MEDIATYPE"), WatchState.valueOf(result.getString("WATCHSTATE")),
+                        result.getString("MEDIATYPE"), WatchState.lookupByName(result.getString("WATCHSTATE")),
                         result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                         result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
                         result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"), result.getString("AUDIOTRACK"), result.getString("SUBTITLETRACK"));
@@ -130,7 +130,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                 localWatchedDate = watchedDate.toLocalDate();
             }
             mediaEntries.add(new MediaEntry(result.getInt("ID"), result.getString("TITLE"), result.getInt("EPISODES"),
-                    result.getString("MEDIATYPE"), WatchState.valueOf(watchstate),
+                    result.getString("MEDIATYPE"), WatchState.lookupByName(watchstate),
                     result.getInt("RATING"), result.getString("PATH"), result.getInt("CURRENTEPISODE"),
                     result.getDate("ADDED").toLocalDate(), result.getInt("EPISODELENGTH"), localWatchedDate,
                     result.getInt("WATCHNUMBER"), directoryEntry, result.getInt("VOLUME"), result.getString("AUDIOTRACK"), result.getString("SUBTITLETRACK")));

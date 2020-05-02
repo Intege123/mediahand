@@ -30,9 +30,9 @@ public abstract class Database {
     /**
      * Connects to the specified database and creates or opens the mediaTable.
      *
-     * @param databaseName   the name of the database
-     * @param username       the username to connect to the database
-     * @param password       the password to connect to the database
+     * @param databaseName the name of the database
+     * @param username the username to connect to the database
+     * @param password the password to connect to the database
      * @param removeOldTable Determines whether the old table should be removed to create a new table or not.
      */
     public static void init(String databaseName, String username, String password, boolean removeOldTable) {
@@ -59,8 +59,8 @@ public abstract class Database {
      * Connects to the specified database.
      *
      * @param databaseName the name of the database to connect to
-     * @param username     the username to connect to the database
-     * @param password     the password to connect to the database
+     * @param username the username to connect to the database
+     * @param password the password to connect to the database
      */
     public static void openConnection(final String databaseName, final String username, final String password) {
         /*
@@ -77,7 +77,8 @@ public abstract class Database {
          * Connecting to local database.
          */
         try {
-            connection = DriverManager.getConnection("jdbc:hsqldb:file:" + databaseName + "; shutdown = true", username, password);
+            connection = DriverManager.getConnection(
+                    "jdbc:hsqldb:file:" + databaseName + "; shutdown = true", username, password);
             statement = connection.createStatement();
         } catch (SQLException e) {
             MessageUtil.warningAlert(e);
@@ -154,8 +155,7 @@ public abstract class Database {
             try {
                 statement.execute(
                         "CREATE TABLE settingsTable(ID INT IDENTITY PRIMARY KEY, PROFILE VARCHAR(255) NOT NULL UNIQUE, "
-                                +
-                                "WIDTH INT NOT NULL, HEIGHT INT NOT NULL)");
+                                + "WIDTH INT NOT NULL, HEIGHT INT NOT NULL, AUTOCONTINUE BOOLEAN, SHOWALL BOOLEAN, WATCHSTATE VARCHAR(255))");
                 MessageUtil.infoAlert("openSettingsTable", "Opened new settings table!");
             } catch (SQLException e) {
                 try {
