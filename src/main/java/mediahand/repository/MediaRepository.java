@@ -41,13 +41,18 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
     public MediaEntry update(MediaEntry entry) throws SQLException {
         Check.notNullArgument(entry, "entry");
 
+        String watchedDate = null;
+        if (entry.getWatchedDate() != null) {
+            watchedDate = "'" + entry.getWatchedDate() + "'";
+        }
         try {
             Database.getStatement().execute("UPDATE MEDIATABLE SET TITLE = '" + entry.getTitle() + "', EPISODES = '" +
                     entry.getEpisodeNumber() + "', MEDIATYPE = '" + entry.getMediaType() + "', WATCHSTATE = '"
                     + entry.getWatchState() + "', CURRENTEPISODE = '" +
                     entry.getCurrentEpisodeNumber() + "', Volume='" + entry.getVolume() + "', DIRTABLE_FK = "
                     + entry.getBasePathId() + ", PATH = '" + entry.getPath() +
-                    "', Rating=" + entry.getRating() + ", WatchNumber=" + entry.getWatchedCount() + " WHERE ID = '"
+                    "', Rating=" + entry.getRating() + ", WatchNumber=" + entry.getWatchedCount() + ", WatchedDate="
+                    + watchedDate + " WHERE ID = '"
                     + entry.getId() + "'");
             MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLException e) {

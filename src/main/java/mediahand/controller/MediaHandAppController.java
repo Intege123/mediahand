@@ -67,7 +67,7 @@ public class MediaHandAppController {
         });
         this.ratingEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && newValue != null) {
+            if (selectedItem != null && newValue != null && selectedItem.getRating() != newValue) {
                 selectedItem.setRating(newValue);
                 try {
                     Database.getMediaRepository().update(selectedItem);
@@ -78,7 +78,7 @@ public class MediaHandAppController {
         });
         this.episodeEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && newValue != null) {
+            if (selectedItem != null && newValue != null && selectedItem.getCurrentEpisodeNumber() != newValue) {
                 selectedItem.setCurrentEpisodeNumber(newValue);
                 try {
                     Database.getMediaRepository().update(selectedItem);
@@ -89,7 +89,7 @@ public class MediaHandAppController {
         });
         this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && newValue != null) {
+            if (selectedItem != null && newValue != null && !selectedItem.getWatchState().toString().equals(newValue)) {
                 selectedItem.setWatchState(WatchState.valueOf(newValue));
                 try {
                     Database.getMediaRepository().update(selectedItem);
@@ -100,7 +100,8 @@ public class MediaHandAppController {
         });
         this.watchedEdit.valueProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && newValue != null) {
+            if (selectedItem != null && (selectedItem.getWatchedDate() == null || newValue == null
+                    || selectedItem.getWatchedDate().isEqual(newValue))) {
                 selectedItem.setWatchedDate(newValue);
                 try {
                     Database.getMediaRepository().update(selectedItem);
