@@ -9,6 +9,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.studiohartman.jamepad.ControllerButton;
+import com.studiohartman.jamepad.ControllerIndex;
+import com.studiohartman.jamepad.ControllerManager;
+import com.studiohartman.jamepad.ControllerUnpluggedException;
+
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,9 +23,11 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import mediahand.WatchState;
@@ -45,14 +53,22 @@ public class MediaHandAppController {
     public ComboBox<Integer> ratingEdit;
     public DatePicker watchedEdit;
     public ComboBox<Integer> episodeEdit;
+    public Label selectedMediaTitle;
+
+    private ControllerIndex currentController;
+
+    private boolean isRunning;
 
     public void init() {
+        startControllerListener();
         addWatchStateFilter();
         addTitleFieldFilterListener();
         this.watchStateEdit.setItems(FXCollections.observableArrayList(WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
         this.ratingEdit.setItems(FXCollections.observableArrayList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         this.mediaTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
+                this.selectedMediaTitle.setText(newValue.getTitle());
+                this.selectedMediaTitle.setTooltip(new Tooltip(newValue.getTitle()));
                 this.watchStateEdit.getSelectionModel().select(newValue.getWatchState().toString());
                 this.ratingEdit.getSelectionModel().select(newValue.getRating());
                 if (newValue.getEpisodeNumber() != this.episodeEdit.getItems().size()) {
@@ -65,6 +81,9 @@ public class MediaHandAppController {
                 }
                 this.episodeEdit.getSelectionModel().select(newValue.getCurrentEpisodeNumber() - 1);
                 this.watchedEdit.setValue(newValue.getWatchedDate());
+            } else {
+                this.selectedMediaTitle.setText("Selected media");
+                this.selectedMediaTitle.setTooltip(new Tooltip("Selected media"));
             }
         });
         this.ratingEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -118,6 +137,64 @@ public class MediaHandAppController {
         }
     }
 
+    public void startControllerListener() {
+        if (this.isRunning) {
+            return;
+        }
+        ControllerManager controllerManager = new ControllerManager();
+        controllerManager.initSDLGamepad();
+        this.currentController = controllerManager.getControllerIndex(0);
+        Thread thread = new Thread(() -> {
+            this.isRunning = true;
+            while (this.isRunning) {
+                controllerManager.update();
+                try {
+                    if (this.currentController.isButtonJustPressed(ControllerButton.DPAD_DOWN) || (
+                            this.currentController.isButtonPressed(ControllerButton.DPAD_DOWN)
+                                    && this.currentController.isButtonPressed(ControllerButton.A))) {
+                        Platform.runLater(() -> {
+                            if (this.mediaTableView.getSelectionModel().isEmpty()) {
+                                this.mediaTableView.getSelectionModel().selectFirst();
+                            } else {
+                                this.mediaTableView.getSelectionModel().selectNext();
+                                this.mediaTableView.scrollTo(this.mediaTableView.getSelectionModel().selectedItemProperty().get());
+                            }
+                        });
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.DPAD_UP) || (
+                            this.currentController.isButtonPressed(ControllerButton.DPAD_UP)
+                                    && this.currentController.isButtonPressed(ControllerButton.A))) {
+                        Platform.runLater(() -> {
+                            this.mediaTableView.getSelectionModel().selectPrevious();
+                            this.mediaTableView.scrollTo(this.mediaTableView.getSelectionModel().selectedItemProperty().get());
+                        });
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.START)) {
+                        Platform.runLater(this::playEmbeddedMedia);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.Y)) {
+                        Platform.runLater(this::increaseCurrentEpisode);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.X)) {
+                        Platform.runLater(this::decreaseCurrentEpisode);
+                    }
+                } catch (ControllerUnpluggedException e) {
+                    break;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+    }
+
+    public void stopControllerListener() {
+        this.isRunning = false;
+    }
+
     private void addTitleFieldFilterListener() {
         this.titleFilter.textProperty().addListener((observable, oldValue, newValue) -> MediaHandAppController.filteredData.setPredicate(m -> filter(m, newValue)));
     }
@@ -164,6 +241,7 @@ public class MediaHandAppController {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
                 JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file, selectedItem);
                 String windowTitle = selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber();
+                this.isRunning = false;
                 javaFXDirectRenderingScene.start(MediaHandApp.getStage(), windowTitle);
             } catch (IOException e) {
                 MessageUtil.warningAlert(e);

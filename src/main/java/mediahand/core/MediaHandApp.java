@@ -47,6 +47,7 @@ public class MediaHandApp extends Application {
 
     @Override
     public void stop() {
+        mediaHandAppController.stopControllerListener();
         int width = (int) MediaHandApp.stage.getWidth();
         int height = (int) MediaHandApp.stage.getHeight();
         this.settingsEntry.setWindowWidth(width);
@@ -101,6 +102,9 @@ public class MediaHandApp extends Application {
     public static void setDefaultScene() {
         MediaHandApp.stage.setScene(MediaHandApp.scene);
         MediaHandApp.stage.setTitle(MediaHandApp.MEDIA_HAND_TITLE);
+        if (mediaHandAppController != null) {
+            mediaHandAppController.startControllerListener();
+        }
     }
 
     public static boolean addBasePath() {

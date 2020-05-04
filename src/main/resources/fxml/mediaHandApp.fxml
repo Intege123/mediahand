@@ -30,16 +30,12 @@
                       prefWidth="150.0" translateY="30.0"/>
             <TextField fx:id="titleFilter" layoutX="3.0" layoutY="316.0" translateY="30.0"/>
             <Line endX="76.0" layoutX="96.0" layoutY="228.0" startX="-100.0" translateY="30.0"/>
-            <ComboBox fx:id="watchStateEdit" layoutX="3.0" layoutY="60.0"
-                      prefWidth="150.0"/>
-            <ComboBox fx:id="ratingEdit" layoutX="97.0" layoutY="101.0" prefHeight="25.0"
-                      prefWidth="55.0"/>
-            <DatePicker fx:id="watchedEdit" layoutX="3.0" layoutY="137.0" prefHeight="25.0"
-                        prefWidth="151.0"/>
-            <ComboBox fx:id="episodeEdit" layoutX="3.0" layoutY="174.0" prefHeight="25.0"
-                      prefWidth="83.0"/>
+            <ComboBox fx:id="watchStateEdit" layoutX="3.0" layoutY="60.0" prefWidth="150.0"/>
+            <ComboBox fx:id="ratingEdit" layoutX="97.0" layoutY="101.0" prefHeight="25.0" prefWidth="55.0"/>
+            <DatePicker fx:id="watchedEdit" layoutX="3.0" layoutY="137.0" prefHeight="25.0" prefWidth="151.0"/>
+            <ComboBox fx:id="episodeEdit" layoutX="3.0" layoutY="174.0" prefHeight="25.0" prefWidth="83.0"/>
             <Label layoutX="50.0" layoutY="105.0" text="Rating"/>
-            <Label layoutX="3.0" layoutY="38.0" text="Selected media"/>
+            <Label fx:id="selectedMediaTitle" layoutX="3.0" layoutY="38.0" maxWidth="150.0" text="Selected media"/>
             <Line endX="76.0" layoutX="97.0" layoutY="34.0" startX="-100.0"/>
             <Label layoutX="3.0" layoutY="232.0" text="Filter" translateY="30.0"/>
             <Button layoutX="95.0" layoutY="214.0" mnemonicParsing="false" onAction="#decreaseWatched" prefHeight="25.0"

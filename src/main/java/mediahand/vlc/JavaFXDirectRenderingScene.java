@@ -8,6 +8,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 
+import com.studiohartman.jamepad.ControllerButton;
+import com.studiohartman.jamepad.ControllerIndex;
+import com.studiohartman.jamepad.ControllerManager;
+import com.studiohartman.jamepad.ControllerUnpluggedException;
+
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -101,7 +106,73 @@ public class JavaFXDirectRenderingScene {
 
     private MediaEntry mediaEntry;
 
+    private ControllerIndex currentController;
+
+    private boolean isRunning;
+
     public JavaFXDirectRenderingScene(final File videoFile, final MediaEntry mediaEntry) {
+        ControllerManager controllerManager = new ControllerManager();
+        controllerManager.initSDLGamepad();
+        this.currentController = controllerManager.getControllerIndex(0);
+        Thread thread = new Thread(() -> {
+            this.isRunning = true;
+            while (this.isRunning) {
+                controllerManager.update();
+                try {
+                    if (this.currentController.isButtonJustPressed(ControllerButton.B)) {
+                        this.mediaPlayer.controls().pause();
+                        TimerTask timerTask = showTimeSlider();
+                        this.timer = new Timer();
+                        this.timer.schedule(timerTask, this.delay * 3);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.RIGHTBUMPER)) {
+                        Platform.runLater(this::playNextEpisode);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.LEFTBUMPER)) {
+                        Platform.runLater(this::playPreviousEpisode);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.X)) {
+                        Platform.runLater(() -> {
+                            this.mediaPlayer.controls().skipTime(80000);
+                        });
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.BACK)) {
+                        Platform.runLater(() -> {
+                            stop();
+                            MediaHandApp.setDefaultScene();
+                        });
+                    }
+                    if (this.currentController.isButtonPressed(ControllerButton.DPAD_LEFT)) {
+                        showTimedTimeSlider(this.delay);
+                        if (this.currentController.isButtonPressed(ControllerButton.A)) {
+                            Platform.runLater(() -> this.mediaPlayer.controls().skipTime(-3000));
+                        } else {
+                            Platform.runLater(() -> this.mediaPlayer.controls().skipTime(-1000));
+                        }
+                    }
+                    if (this.currentController.isButtonPressed(ControllerButton.DPAD_RIGHT)) {
+                        showTimedTimeSlider(this.delay);
+                        if (this.currentController.isButtonPressed(ControllerButton.A)) {
+                            Platform.runLater(() -> this.mediaPlayer.controls().skipTime(3000));
+                        } else {
+                            Platform.runLater(() -> this.mediaPlayer.controls().skipTime(1000));
+                        }
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.Y)) {
+                        Platform.runLater(() -> this.stage.setFullScreen(!this.stage.isFullScreen()));
+                    }
+                } catch (ControllerUnpluggedException e) {
+                    break;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+
         this.videoFile = videoFile.getAbsolutePath();
         this.mediaEntry = mediaEntry;
 
@@ -161,6 +232,7 @@ public class JavaFXDirectRenderingScene {
     }
 
     public void stop() {
+        this.isRunning = false;
         this.stage.setOnCloseRequest(null);
         stopTimer();
         this.timer.cancel();
@@ -199,6 +271,7 @@ public class JavaFXDirectRenderingScene {
 
         double mediaDuration = this.mediaPlayer.media().info().duration() / 60000.0;
         BorderPane sliderPane = initSliderPane(mediaDuration);
+        showTimedTimeSlider(this.delay * 3);
 
         this.controlPane.setBottom(sliderPane);
     }
@@ -236,19 +309,31 @@ public class JavaFXDirectRenderingScene {
 
     private void addControlPaneMouseListener(BorderPane sliderPane) {
         this.stackPane.setOnMouseMoved(event -> {
-            this.controlPane.setVisible(true);
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    JavaFXDirectRenderingScene.this.controlPane.setVisible(false);
-                }
-            };
-            this.timer.cancel();
+            showTimedTimeSlider(this.delay);
+            TimerTask timerTask = showTimeSlider();
             if (sliderPane.sceneToLocal(event.getSceneX(), event.getSceneY()).getY() < -10) {
                 this.timer = new Timer();
-                this.timer.schedule(task, this.delay);
+                this.timer.schedule(timerTask, this.delay);
             }
         });
+    }
+
+    private void showTimedTimeSlider(long delay) {
+        TimerTask timerTask = showTimeSlider();
+        this.timer = new Timer();
+        this.timer.schedule(timerTask, delay);
+    }
+
+    private TimerTask showTimeSlider() {
+        this.controlPane.setVisible(true);
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                JavaFXDirectRenderingScene.this.controlPane.setVisible(false);
+            }
+        };
+        this.timer.cancel();
+        return task;
     }
 
     private Slider initMediaTimeSlider(final double mediaDuration, final EmbeddedMediaPlayer mediaPlayer) {
@@ -279,6 +364,7 @@ public class JavaFXDirectRenderingScene {
                 MediaHandApp.setDefaultScene();
             } else if (event.getCode() == KeyCode.SPACE) {
                 this.mediaPlayer.controls().pause();
+                showTimedTimeSlider(this.delay * 3);
             } else if (event.getCode() == KeyCode.ENTER) {
                 this.mediaPlayer.controls().skipTime(80000);
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
