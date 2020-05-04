@@ -52,7 +52,8 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
                     entry.getCurrentEpisodeNumber() + "', Volume='" + entry.getVolume() + "', DIRTABLE_FK = "
                     + entry.getBasePathId() + ", PATH = '" + entry.getPath() +
                     "', Rating=" + entry.getRating() + ", WatchNumber=" + entry.getWatchedCount() + ", WatchedDate="
-                    + watchedDate + " WHERE ID = '"
+                    + watchedDate + ", SUBTITLETRACK=" + entry.getSubtitleTrack() + ", AUDIOTRACK="
+                    + entry.getAudioTrack() + " WHERE ID = '"
                     + entry.getId() + "'");
             MediaHandAppController.triggerMediaEntryUpdate(entry);
         } catch (SQLException e) {
