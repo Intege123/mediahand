@@ -3,11 +3,13 @@ package mediahand.controller;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.studiohartman.jamepad.ControllerButton;
 import com.studiohartman.jamepad.ControllerIndex;
@@ -19,7 +21,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.event.ActionEvent;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -38,6 +39,8 @@ import mediahand.utils.MessageUtil;
 import mediahand.vlc.JavaFXDirectRenderingScene;
 
 public class MediaHandAppController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MediaHandAppController.class);
 
     public TableView<MediaEntry> mediaTableView;
 
@@ -90,51 +93,31 @@ public class MediaHandAppController {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && newValue != null && selectedItem.getRating() != newValue) {
                 selectedItem.setRating(newValue);
-                try {
-                    Database.getMediaRepository().update(selectedItem);
-                } catch (SQLException throwables) {
-                    MessageUtil.warningAlert(throwables);
-                }
+                Database.getMediaRepository().update(selectedItem);
             }
         });
         this.episodeEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && newValue != null && selectedItem.getCurrentEpisodeNumber() != newValue) {
                 selectedItem.setCurrentEpisodeNumber(newValue);
-                try {
-                    Database.getMediaRepository().update(selectedItem);
-                } catch (SQLException throwables) {
-                    MessageUtil.warningAlert(throwables);
-                }
+                Database.getMediaRepository().update(selectedItem);
             }
         });
         this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !Objects.equals(selectedItem.getWatchState().toString(), newValue)) {
                 selectedItem.setWatchState(WatchState.lookupByName(newValue));
-                try {
-                    Database.getMediaRepository().update(selectedItem);
-                } catch (SQLException throwables) {
-                    MessageUtil.warningAlert(throwables);
-                }
+                Database.getMediaRepository().update(selectedItem);
             }
         });
         this.watchedEdit.valueProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !Objects.equals(selectedItem.getWatchedDate(), newValue)) {
                 selectedItem.setWatchedDate(newValue);
-                try {
-                    Database.getMediaRepository().update(selectedItem);
-                } catch (SQLException throwables) {
-                    MessageUtil.warningAlert(throwables);
-                }
+                Database.getMediaRepository().update(selectedItem);
             }
         });
-        try {
-            fillTableView(Database.getMediaRepository().findAll());
-        } catch (SQLException throwables) {
-            MessageUtil.warningAlert(throwables);
-        }
+        fillTableView(Database.getMediaRepository().findAll());
     }
 
     public void startControllerListener() {
@@ -184,7 +167,8 @@ public class MediaHandAppController {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.error("Controller thread: sleep", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         });
@@ -210,7 +194,7 @@ public class MediaHandAppController {
         }
     }
 
-    public void onPlayButton(ActionEvent actionEvent) {
+    public void onPlayButton() {
         playEmbeddedMedia();
     }
 
@@ -292,11 +276,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() + 1);
-            try {
-                Database.getMediaRepository().update(selectedItem);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
+            Database.getMediaRepository().update(selectedItem);
         }
     }
 
@@ -304,11 +284,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() > 1) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() - 1);
-            try {
-                Database.getMediaRepository().update(selectedItem);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
+            Database.getMediaRepository().update(selectedItem);
         }
     }
 
@@ -324,7 +300,7 @@ public class MediaHandAppController {
         return this.mediaTableView.getSelectionModel().getSelectedItem();
     }
 
-    public void onFilter(ActionEvent actionEvent) {
+    public void onFilter() {
         MediaHandAppController.filteredData.setPredicate(this::filter);
     }
 
@@ -333,41 +309,31 @@ public class MediaHandAppController {
     }
 
     private boolean filter(final MediaEntry mediaEntry, final String textFilter) {
-        if (this.showAllCheckbox.isSelected() || mediaEntry.isAvailable()) {
-            if (mediaEntry.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem())) {
-                if (textFilter == null || textFilter.isEmpty()) {
-                    return true;
-                }
-
-                String lowerCaseFilter = textFilter.toLowerCase();
-
-                return mediaEntry.getTitle().toLowerCase().contains(lowerCaseFilter);
+        if ((this.showAllCheckbox.isSelected() || mediaEntry.isAvailable())
+                && mediaEntry.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem())) {
+            if (textFilter == null || textFilter.isEmpty()) {
+                return true;
             }
+            String lowerCaseFilter = textFilter.toLowerCase();
+
+            return mediaEntry.getTitle().toLowerCase().contains(lowerCaseFilter);
         }
         return false;
     }
 
-    public void decreaseWatched(final ActionEvent actionEvent) {
+    public void decreaseWatched() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getWatchedCount() > 0) {
             selectedItem.setWatchedCount(selectedItem.getWatchedCount() - 1);
-            try {
-                Database.getMediaRepository().update(selectedItem);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
+            Database.getMediaRepository().update(selectedItem);
         }
     }
 
-    public void increaseWatched(final ActionEvent actionEvent) {
+    public void increaseWatched() {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             selectedItem.setWatchedCount(selectedItem.getWatchedCount() + 1);
-            try {
-                Database.getMediaRepository().update(selectedItem);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
+            Database.getMediaRepository().update(selectedItem);
         }
     }
 }

@@ -1,0 +1,2 @@
+mvn sonar:sonar -Dsonar.projectKey=com.intege.mediahand:mediahand -Dsonar.host.url=http://localhost:9000 -Dsonar.login=5c00dfa37c84cf99b2234a5
+bc73b93d402668e78

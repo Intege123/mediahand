@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -18,7 +20,6 @@ import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.MediaRepository;
 import mediahand.repository.base.Database;
-import mediahand.utils.MessageUtil;
 import utils.Check;
 
 /**
@@ -27,6 +28,8 @@ import utils.Check;
  * @author Lueko
  */
 public class MediaLoader {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MediaLoader.class);
 
     private DirectoryEntry basePath;
 
@@ -57,13 +60,11 @@ public class MediaLoader {
     private void addMedia(final String path) {
         File f;
         Path p;
-        DirectoryStream<Path> stream;
 
         f = new File(path);
         if (f.exists()) {
             p = f.toPath();
-            try {
-                stream = Files.newDirectoryStream(p);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
                 for (Path dir : stream) {
                     if (dir.toFile().isDirectory()) {
                         // recursive execution
@@ -75,7 +76,7 @@ public class MediaLoader {
                     }
                 }
             } catch (IOException e) {
-                MessageUtil.warningAlert(e);
+                LOGGER.warn("Could not add media", e);
             }
         }
     }
@@ -106,11 +107,7 @@ public class MediaLoader {
                     .filtered(m -> m.getTitle().equals(newMediaEntry.getTitle()));
         }
         if (mediaEntryFilteredList == null || mediaEntryFilteredList.isEmpty()) {
-            try {
-                mediaRepository.create(newMediaEntry);
-            } catch (SQLException throwables) {
-                MessageUtil.warningAlert(throwables);
-            }
+            mediaRepository.create(newMediaEntry);
         } else {
             MediaEntry mediaEntry = mediaEntryFilteredList.get(0);
             if (!mediaEntry.isAvailable()) {
@@ -155,19 +152,11 @@ public class MediaLoader {
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
-        try {
-            mediaRepository.update(mediaEntry);
-        } catch (SQLException throwables) {
-            MessageUtil.warningAlert(throwables);
-        }
+        mediaRepository.update(mediaEntry);
     }
 
     private void updateMediaEntry(final MediaEntry mediaEntry, final MediaRepository mediaRepository) {
-        try {
-            mediaRepository.update(mediaEntry);
-        } catch (SQLException throwables) {
-            MessageUtil.warningAlert(throwables);
-        }
+        mediaRepository.update(mediaEntry);
     }
 
     public void updateMediaEntry(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
@@ -179,11 +168,7 @@ public class MediaLoader {
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
         }
-        try {
-            mediaRepository.update(mediaEntry);
-        } catch (SQLException throwables) {
-            MessageUtil.warningAlert(throwables);
-        }
+        mediaRepository.update(mediaEntry);
     }
 
     public File getEpisode(final String absolutePath, final int episode) throws IOException {

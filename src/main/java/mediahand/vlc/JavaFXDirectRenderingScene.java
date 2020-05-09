@@ -2,11 +2,13 @@ package mediahand.vlc;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.studiohartman.jamepad.ControllerButton;
 import com.studiohartman.jamepad.ControllerIndex;
@@ -36,7 +38,6 @@ import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.base.Database;
-import mediahand.utils.MessageUtil;
 import mediahand.vlc.event.StopRenderingSceneHandler;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -52,12 +53,61 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
 
 public class JavaFXDirectRenderingScene {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaFXDirectRenderingScene.class);
+    
     private static final double FPS = 60.0;
 
-    private final NanoTimer nanoTimer = new NanoTimer(1000.0 / FPS) {
+    private static final long DELAY = 1000;
+
+    private final NanoTimer nanoTimer = new NanoTimer(1000.0 / JavaFXDirectRenderingScene.FPS) {
         @Override
         protected void onSucceeded() {
             renderFrame();
+        }
+
+        private void renderFrame() {
+            GraphicsContext g = JavaFXDirectRenderingScene.this.canvas.getGraphicsContext2D();
+
+            double width = JavaFXDirectRenderingScene.this.canvas.getWidth();
+            double height = JavaFXDirectRenderingScene.this.canvas.getHeight();
+
+            g.setFill(new Color(0, 0, 0, 1));
+            g.fillRect(0, 0, width, height);
+
+            if (JavaFXDirectRenderingScene.this.img != null) {
+                double imageWidth = JavaFXDirectRenderingScene.this.img.getWidth();
+                double imageHeight = JavaFXDirectRenderingScene.this.img.getHeight();
+
+                double sx = width / imageWidth;
+                double sy = height / imageHeight;
+
+                double sf = Math.min(sx, sy);
+
+                double scaledW = imageWidth * sf;
+                double scaledH = imageHeight * sf;
+
+                Affine ax = g.getTransform();
+
+                g.translate(
+                        (width - scaledW) / 2,
+                        (height - scaledH) / 2
+                );
+
+                if (sf != 1.0) {
+                    g.scale(sf, sf);
+                }
+
+                try {
+                    JavaFXDirectRenderingScene.this.semaphore.acquire();
+                    g.drawImage(JavaFXDirectRenderingScene.this.img, 0, 0);
+                    JavaFXDirectRenderingScene.this.semaphore.release();
+                } catch (InterruptedException e) {
+                    JavaFXDirectRenderingScene.LOGGER.error("semaphore acquire", e);
+                    Thread.currentThread().interrupt();
+                }
+
+                g.setTransform(ax);
+            }
         }
     };
 
@@ -85,7 +135,7 @@ public class JavaFXDirectRenderingScene {
      */
     private final WritablePixelFormat<ByteBuffer> pixelFormat;
 
-    private StackPane stackPane;
+    private final StackPane stackPane;
 
     private final MediaPlayerFactory mediaPlayerFactory;
 
@@ -100,13 +150,11 @@ public class JavaFXDirectRenderingScene {
 
     private Slider mediaTimeSlider;
 
-    private BorderPane controlPane;
+    private final BorderPane controlPane;
 
-    private final long delay = 1000;
+    private final MediaEntry mediaEntry;
 
-    private MediaEntry mediaEntry;
-
-    private ControllerIndex currentController;
+    private final ControllerIndex currentController;
 
     private boolean isRunning;
 
@@ -123,7 +171,7 @@ public class JavaFXDirectRenderingScene {
                         this.mediaPlayer.controls().pause();
                         TimerTask timerTask = showTimeSlider();
                         this.timer = new Timer();
-                        this.timer.schedule(timerTask, this.delay * 3);
+                        this.timer.schedule(timerTask, JavaFXDirectRenderingScene.DELAY * 3);
                     }
                     if (this.currentController.isButtonJustPressed(ControllerButton.RIGHTBUMPER)) {
                         Platform.runLater(this::playNextEpisode);
@@ -132,9 +180,7 @@ public class JavaFXDirectRenderingScene {
                         Platform.runLater(this::playPreviousEpisode);
                     }
                     if (this.currentController.isButtonJustPressed(ControllerButton.X)) {
-                        Platform.runLater(() -> {
-                            this.mediaPlayer.controls().skipTime(80000);
-                        });
+                        Platform.runLater(() -> JavaFXDirectRenderingScene.this.mediaPlayer.controls().skipTime(80000));
                     }
                     if (this.currentController.isButtonJustPressed(ControllerButton.BACK)) {
                         Platform.runLater(() -> {
@@ -143,7 +189,7 @@ public class JavaFXDirectRenderingScene {
                         });
                     }
                     if (this.currentController.isButtonPressed(ControllerButton.DPAD_LEFT)) {
-                        showTimedTimeSlider(this.delay);
+                        showTimedTimeSlider(JavaFXDirectRenderingScene.DELAY);
                         if (this.currentController.isButtonPressed(ControllerButton.A)) {
                             Platform.runLater(() -> this.mediaPlayer.controls().skipTime(-3000));
                         } else {
@@ -151,7 +197,7 @@ public class JavaFXDirectRenderingScene {
                         }
                     }
                     if (this.currentController.isButtonPressed(ControllerButton.DPAD_RIGHT)) {
-                        showTimedTimeSlider(this.delay);
+                        showTimedTimeSlider(JavaFXDirectRenderingScene.DELAY);
                         if (this.currentController.isButtonPressed(ControllerButton.A)) {
                             Platform.runLater(() -> this.mediaPlayer.controls().skipTime(3000));
                         } else {
@@ -167,7 +213,8 @@ public class JavaFXDirectRenderingScene {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    JavaFXDirectRenderingScene.LOGGER.error("Controller thread: sleep", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         });
@@ -237,11 +284,7 @@ public class JavaFXDirectRenderingScene {
         stopTimer();
         this.timer.cancel();
 
-        try {
-            Database.getMediaRepository().update(this.mediaEntry);
-        } catch (SQLException throwables) {
-            MessageUtil.warningAlert(throwables);
-        }
+        Database.getMediaRepository().update(this.mediaEntry);
 
         this.mediaPlayer.controls().stop();
         this.mediaPlayer.release();
@@ -271,7 +314,7 @@ public class JavaFXDirectRenderingScene {
 
         double mediaDuration = this.mediaPlayer.media().info().duration() / 60000.0;
         BorderPane sliderPane = initSliderPane(mediaDuration);
-        showTimedTimeSlider(this.delay * 3);
+        showTimedTimeSlider(JavaFXDirectRenderingScene.DELAY * 3);
 
         this.controlPane.setBottom(sliderPane);
     }
@@ -285,7 +328,7 @@ public class JavaFXDirectRenderingScene {
 
             @Override
             public void finished(MediaPlayer mediaPlayer) {
-                Platform.runLater(() -> onMediaFinished());
+                Platform.runLater(JavaFXDirectRenderingScene.this::onMediaFinished);
             }
         });
     }
@@ -309,11 +352,11 @@ public class JavaFXDirectRenderingScene {
 
     private void addControlPaneMouseListener(BorderPane sliderPane) {
         this.stackPane.setOnMouseMoved(event -> {
-            showTimedTimeSlider(this.delay);
+            showTimedTimeSlider(JavaFXDirectRenderingScene.DELAY);
             TimerTask timerTask = showTimeSlider();
             if (sliderPane.sceneToLocal(event.getSceneX(), event.getSceneY()).getY() < -10) {
                 this.timer = new Timer();
-                this.timer.schedule(timerTask, this.delay);
+                this.timer.schedule(timerTask, JavaFXDirectRenderingScene.DELAY);
             }
         });
     }
@@ -364,7 +407,7 @@ public class JavaFXDirectRenderingScene {
                 MediaHandApp.setDefaultScene();
             } else if (event.getCode() == KeyCode.SPACE) {
                 this.mediaPlayer.controls().pause();
-                showTimedTimeSlider(this.delay * 3);
+                showTimedTimeSlider(JavaFXDirectRenderingScene.DELAY * 3);
             } else if (event.getCode() == KeyCode.ENTER) {
                 this.mediaPlayer.controls().skipTime(80000);
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
@@ -483,12 +526,14 @@ public class JavaFXDirectRenderingScene {
 
     private void resetStyleOfCurrentAudioTrack(final EmbeddedMediaPlayer mediaPlayer) {
         Menu audioMenu = (Menu) this.contextMenu.getItems().get(0);
-        audioMenu.getItems().filtered(item1 -> item1.getId().equals(mediaPlayer.audio().track() + "")).get(0).setStyle("-fx-text-fill: black;");
+        audioMenu.getItems().filtered(item1 -> item1.getId().equals(
+                mediaPlayer.audio().track() + "")).get(0).setStyle("-fx-text-fill: black;");
     }
 
     private void resetStyleOfCurrentSubtitleTrack(final EmbeddedMediaPlayer mediaPlayer) {
         Menu subtitleMenu = (Menu) this.contextMenu.getItems().get(1);
-        subtitleMenu.getItems().filtered(item1 -> item1.getId().equals(mediaPlayer.subpictures().track() + "")).get(0).setStyle("-fx-text-fill: black;");
+        subtitleMenu.getItems().filtered(item1 -> item1.getId().equals(
+                mediaPlayer.subpictures().track() + "")).get(0).setStyle("-fx-text-fill: black;");
     }
 
     private class JavaFxVideoSurface extends CallbackVideoSurface {
@@ -523,52 +568,9 @@ public class JavaFXDirectRenderingScene {
                 JavaFXDirectRenderingScene.this.pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), JavaFXDirectRenderingScene.this.pixelFormat, nativeBuffers[0], bufferFormat.getPitches()[0]);
                 JavaFXDirectRenderingScene.this.semaphore.release();
             } catch (InterruptedException e) {
-                System.err.println(e.getMessage());
+                JavaFXDirectRenderingScene.LOGGER.error("JavaFxRenderCallback.display", e);
+                Thread.currentThread().interrupt();
             }
-        }
-    }
-
-    private void renderFrame() {
-        GraphicsContext g = this.canvas.getGraphicsContext2D();
-
-        double width = this.canvas.getWidth();
-        double height = this.canvas.getHeight();
-
-        g.setFill(new Color(0, 0, 0, 1));
-        g.fillRect(0, 0, width, height);
-
-        if (this.img != null) {
-            double imageWidth = this.img.getWidth();
-            double imageHeight = this.img.getHeight();
-
-            double sx = width / imageWidth;
-            double sy = height / imageHeight;
-
-            double sf = Math.min(sx, sy);
-
-            double scaledW = imageWidth * sf;
-            double scaledH = imageHeight * sf;
-
-            Affine ax = g.getTransform();
-
-            g.translate(
-                    (width - scaledW) / 2,
-                    (height - scaledH) / 2
-            );
-
-            if (sf != 1.0) {
-                g.scale(sf, sf);
-            }
-
-            try {
-                this.semaphore.acquire();
-                g.drawImage(this.img, 0, 0);
-                this.semaphore.release();
-            } catch (InterruptedException e) {
-                System.err.println(e.getMessage());
-            }
-
-            g.setTransform(ax);
         }
     }
 
@@ -579,7 +581,8 @@ public class JavaFXDirectRenderingScene {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                MessageUtil.warningAlert(e);
+                JavaFXDirectRenderingScene.LOGGER.error("nanoTime: sleep", e);
+                Thread.currentThread().interrupt();
             }
         }
         return true;

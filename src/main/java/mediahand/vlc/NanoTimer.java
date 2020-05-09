@@ -19,21 +19,21 @@
 
 package mediahand.vlc;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Originally contributed by Jason Pollastrini, with changes.
  */
 public abstract class NanoTimer extends ScheduledService<Void> {
 
-    private final long ONE_NANO = 1000000000L;
+    private static final long ONE_NANO = 1000000000L;
 
-    private final double ONE_NANO_INV = 1f / 1000000000L;
+    private static final double ONE_NANO_INV = 1f / 1000000000L;
 
     private long startTime;
 
@@ -54,7 +54,7 @@ public abstract class NanoTimer extends ScheduledService<Void> {
     }
 
     public final double getTimeAsSeconds() {
-        return getTime() * this.ONE_NANO_INV;
+        return getTime() * NanoTimer.ONE_NANO_INV;
     }
 
     public final double getDeltaTime() {
@@ -92,7 +92,7 @@ public abstract class NanoTimer extends ScheduledService<Void> {
     }
 
     private void updateTimer() {
-        this.deltaTime = (getTime() - this.previousTime) * (1.0f / this.ONE_NANO);
+        this.deltaTime = (getTime() - this.previousTime) * (1.0f / NanoTimer.ONE_NANO);
         this.frameRate = 1.0f / this.deltaTime;
         this.previousTime = getTime();
     }
@@ -109,7 +109,7 @@ public abstract class NanoTimer extends ScheduledService<Void> {
         onFailed();
     }
 
-    private class NanoThreadFactory implements ThreadFactory {
+    private static class NanoThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable, "NanoTimerThread");

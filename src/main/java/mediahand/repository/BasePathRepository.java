@@ -5,6 +5,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import mediahand.domain.DirectoryEntry;
 import mediahand.repository.base.BaseRepository;
 import mediahand.repository.base.Database;
@@ -12,6 +15,8 @@ import mediahand.utils.MessageUtil;
 import utils.Check;
 
 public class BasePathRepository implements BaseRepository<DirectoryEntry> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BasePathRepository.class);
 
     @Override
     public DirectoryEntry create(DirectoryEntry entry) {
@@ -26,7 +31,7 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
                 return directoryEntry;
             }
         } catch (SQLException e) {
-            MessageUtil.warningAlert(e);
+            LOGGER.error("create", e);
         }
         return null;
     }
@@ -43,13 +48,13 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
     @Override
     public DirectoryEntry find(DirectoryEntry entry) {
         Check.notNullArgument(entry, "entry");
-        try {
-            ResultSet result = Database.getStatement().executeQuery("SELECT * FROM DIRTABLE WHERE PATH='" + entry.getPath() + "'");
+        try (ResultSet result = Database.getStatement().executeQuery(
+                "SELECT * FROM DIRTABLE WHERE PATH='" + entry.getPath() + "'")) {
             if (result.next()) {
                 return new DirectoryEntry(result.getInt("ID"), result.getString("PATH"));
             }
         } catch (SQLException e) {
-            MessageUtil.warningAlert(e);
+            LOGGER.error("find", e);
         }
         return null;
     }
@@ -58,13 +63,12 @@ public class BasePathRepository implements BaseRepository<DirectoryEntry> {
     public List<DirectoryEntry> findAll() {
         List<DirectoryEntry> directoryEntries = new ArrayList<>();
 
-        try {
-            ResultSet result = Database.getStatement().executeQuery("SELECT * FROM DIRTABLE");
+        try (ResultSet result = Database.getStatement().executeQuery("SELECT * FROM DIRTABLE")) {
             while (result.next()) {
                 directoryEntries.add(new DirectoryEntry(result.getInt("ID"), result.getString("PATH")));
             }
         } catch (SQLException e) {
-            MessageUtil.warningAlert(e);
+            LOGGER.error("findAll", e);
         }
         return directoryEntries;
     }

@@ -86,7 +86,7 @@ public class MediaHandApp extends Application {
             loader.setLocation(MediaHandApp.class.getResource("/fxml/mediaHandApp.fxml"));
             this.rootLayout.setCenter(loader.load());
             MediaHandApp.mediaHandAppController = loader.getController();
-            mediaHandAppController.init();
+            mediaHandAppController.init(); // TODO [lueko]: add scene as parameter and make scene non-static
         } catch (IOException e) {
             MessageUtil.warningAlert(e);
         }
@@ -96,7 +96,7 @@ public class MediaHandApp extends Application {
         mediaHandAppController.autoContinueCheckbox.setSelected(this.settingsEntry.isAutoContinue());
         mediaHandAppController.showAllCheckbox.setSelected(this.settingsEntry.isShowAll());
         mediaHandAppController.watchStateFilter.getSelectionModel().select(this.settingsEntry.getWatchStateValue());
-        mediaHandAppController.onFilter(null);
+        mediaHandAppController.onFilter();
     }
 
     public static void setDefaultScene() {

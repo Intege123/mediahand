@@ -4,6 +4,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import mediahand.WatchState;
 import mediahand.domain.SettingsEntry;
 import mediahand.repository.base.BaseRepository;
@@ -12,6 +15,8 @@ import mediahand.utils.MessageUtil;
 import utils.Check;
 
 public class SettingsRepository implements BaseRepository<SettingsEntry> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsRepository.class);
 
     @Override
     public SettingsEntry create(SettingsEntry entry) {
@@ -29,7 +34,7 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
                 return settingsEntry;
             }
         } catch (SQLException e) {
-            MessageUtil.warningAlert(e);
+            LOGGER.error("create", e);
         }
         return null;
     }
@@ -57,13 +62,13 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
     @Override
     public SettingsEntry find(SettingsEntry entry) {
         Check.notNullArgument(entry, "entry");
-        try {
-            ResultSet result = Database.getStatement().executeQuery("SELECT * FROM SETTINGSTABLE WHERE PROFILE='" + entry.getProfile() + "'");
+        try (ResultSet result = Database.getStatement().executeQuery(
+                "SELECT * FROM SETTINGSTABLE WHERE PROFILE='" + entry.getProfile() + "'")) {
             if (result.next()) {
                 return new SettingsEntry(result.getInt("ID"), result.getString("PROFILE"), result.getInt("WIDTH"), result.getInt("HEIGHT"), result.getBoolean("AUTOCONTINUE"), result.getBoolean("SHOWALL"), WatchState.lookupByName(result.getString("WATCHSTATE")));
             }
         } catch (SQLException e) {
-            MessageUtil.warningAlert(e);
+            LOGGER.error("find", e);
         }
         return null;
     }
@@ -76,5 +81,5 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
     public List<SettingsEntry> findAll() {
         return null;
     }
-    
+
 }
