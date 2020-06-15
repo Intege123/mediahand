@@ -18,13 +18,34 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsRepository.class);
 
+    public SettingsRepository() {
+        initTable();
+    }
+
+    private void initTable() {
+        if (Database.getInstance().getStatement() != null) {
+            try {
+                Database.getInstance().getStatement().execute(
+                        "CREATE TABLE settingsTable(ID INT IDENTITY PRIMARY KEY, PROFILE VARCHAR(255) NOT NULL UNIQUE, "
+                                + "WIDTH INT NOT NULL, HEIGHT INT NOT NULL, AUTOCONTINUE BOOLEAN, SHOWALL BOOLEAN, WATCHSTATE VARCHAR(255))");
+                MessageUtil.infoAlert("openSettingsTable", "Opened new settings table!");
+            } catch (SQLException e) {
+                try {
+                    Database.getInstance().getStatement().execute("TABLE settingsTable");
+                } catch (SQLException e2) {
+                    MessageUtil.warningAlert(e2, "Could not open dirTable!");
+                }
+            }
+        }
+    }
+
     @Override
     public SettingsEntry create(SettingsEntry entry) {
         Check.notNullArgument(entry, "entry");
         try {
             SettingsEntry settingsEntry = find(entry);
             if (settingsEntry == null) {
-                Database.getStatement().execute(
+                Database.getInstance().getStatement().execute(
                         "INSERT INTO SETTINGSTABLE (PROFILE, WIDTH, HEIGHT, AUTOCONTINUE, SHOWALL, WATCHSTATE) VALUES('"
                                 + entry.getProfile() + "', '" + entry.getWindowWidth() + "', '"
                                 + entry.getWindowHeight() + "', " + entry.isAutoContinue() + ", " + entry.isShowAll()
@@ -34,7 +55,7 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
                 return settingsEntry;
             }
         } catch (SQLException e) {
-            LOGGER.error("create", e);
+            SettingsRepository.LOGGER.error("create", e);
         }
         return null;
     }
@@ -44,7 +65,7 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
         Check.notNullArgument(entry, "entry");
 
         try {
-            Database.getStatement().execute(
+            Database.getInstance().getStatement().execute(
                     "UPDATE SETTINGSTABLE SET PROFILE = '" + entry.getProfile() + "', WIDTH = '" +
                             entry.getWindowWidth() + "', HEIGHT = '" + entry.getWindowHeight() + "', AUTOCONTINUE = "
                             + entry.isAutoContinue() + ", SHOWALL = " + entry.isShowAll() + ", WATCHSTATE = '"
@@ -62,13 +83,13 @@ public class SettingsRepository implements BaseRepository<SettingsEntry> {
     @Override
     public SettingsEntry find(SettingsEntry entry) {
         Check.notNullArgument(entry, "entry");
-        try (ResultSet result = Database.getStatement().executeQuery(
+        try (ResultSet result = Database.getInstance().getStatement().executeQuery(
                 "SELECT * FROM SETTINGSTABLE WHERE PROFILE='" + entry.getProfile() + "'")) {
             if (result.next()) {
                 return new SettingsEntry(result.getInt("ID"), result.getString("PROFILE"), result.getInt("WIDTH"), result.getInt("HEIGHT"), result.getBoolean("AUTOCONTINUE"), result.getBoolean("SHOWALL"), WatchState.lookupByName(result.getString("WATCHSTATE")));
             }
         } catch (SQLException e) {
-            LOGGER.error("find", e);
+            SettingsRepository.LOGGER.error("find", e);
         }
         return null;
     }

@@ -34,7 +34,7 @@ import javafx.scene.input.KeyEvent;
 import mediahand.WatchState;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
-import mediahand.repository.base.Database;
+import mediahand.repository.RepositoryFactory;
 import mediahand.utils.MessageUtil;
 import mediahand.vlc.JavaFXDirectRenderingScene;
 
@@ -93,31 +93,31 @@ public class MediaHandAppController {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && newValue != null && selectedItem.getRating() != newValue) {
                 selectedItem.setRating(newValue);
-                Database.getMediaRepository().update(selectedItem);
+                RepositoryFactory.getMediaRepository().update(selectedItem);
             }
         });
         this.episodeEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && newValue != null && selectedItem.getCurrentEpisodeNumber() != newValue) {
                 selectedItem.setCurrentEpisodeNumber(newValue);
-                Database.getMediaRepository().update(selectedItem);
+                RepositoryFactory.getMediaRepository().update(selectedItem);
             }
         });
         this.watchStateEdit.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !Objects.equals(selectedItem.getWatchState().toString(), newValue)) {
                 selectedItem.setWatchState(WatchState.lookupByName(newValue));
-                Database.getMediaRepository().update(selectedItem);
+                RepositoryFactory.getMediaRepository().update(selectedItem);
             }
         });
         this.watchedEdit.valueProperty().addListener((observable, oldValue, newValue) -> {
             MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !Objects.equals(selectedItem.getWatchedDate(), newValue)) {
                 selectedItem.setWatchedDate(newValue);
-                Database.getMediaRepository().update(selectedItem);
+                RepositoryFactory.getMediaRepository().update(selectedItem);
             }
         });
-        fillTableView(Database.getMediaRepository().findAll());
+        fillTableView(RepositoryFactory.getMediaRepository().findAll());
     }
 
     public void startControllerListener() {
@@ -167,7 +167,7 @@ public class MediaHandAppController {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
-                    LOGGER.error("Controller thread: sleep", e);
+                    MediaHandAppController.LOGGER.error("Controller thread: sleep", e);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -203,7 +203,7 @@ public class MediaHandAppController {
 
         MediaHandAppController.filteredData = new FilteredList<>(MediaHandAppController.mediaEntries, this::filter);
 
-        SortedList<MediaEntry> sortedData = new SortedList<>(filteredData);
+        SortedList<MediaEntry> sortedData = new SortedList<>(MediaHandAppController.filteredData);
         sortedData.comparatorProperty().bind(this.mediaTableView.comparatorProperty());
 
         this.mediaTableView.setItems(sortedData);
@@ -268,7 +268,7 @@ public class MediaHandAppController {
     private void updateMedia(final MediaEntry mediaEntry) {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
-            MediaHandApp.getMediaLoader().updateMediaEntry(mediaEntry, Database.getMediaRepository(), selectedItem);
+            MediaHandApp.getMediaLoader().updateMediaEntry(mediaEntry, RepositoryFactory.getMediaRepository(), selectedItem);
         }
     }
 
@@ -276,7 +276,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() < selectedItem.getEpisodeNumber()) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() + 1);
-            Database.getMediaRepository().update(selectedItem);
+            RepositoryFactory.getMediaRepository().update(selectedItem);
         }
     }
 
@@ -284,7 +284,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getCurrentEpisodeNumber() > 1) {
             selectedItem.setCurrentEpisodeNumber(selectedItem.getCurrentEpisodeNumber() - 1);
-            Database.getMediaRepository().update(selectedItem);
+            RepositoryFactory.getMediaRepository().update(selectedItem);
         }
     }
 
@@ -325,7 +325,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null && selectedItem.getWatchedCount() > 0) {
             selectedItem.setWatchedCount(selectedItem.getWatchedCount() - 1);
-            Database.getMediaRepository().update(selectedItem);
+            RepositoryFactory.getMediaRepository().update(selectedItem);
         }
     }
 
@@ -333,7 +333,7 @@ public class MediaHandAppController {
         MediaEntry selectedItem = this.mediaTableView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             selectedItem.setWatchedCount(selectedItem.getWatchedCount() + 1);
-            Database.getMediaRepository().update(selectedItem);
+            RepositoryFactory.getMediaRepository().update(selectedItem);
         }
     }
 }

@@ -16,6 +16,7 @@ import mediahand.WatchState;
 import mediahand.controller.MediaHandAppController;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.SettingsEntry;
+import mediahand.repository.RepositoryFactory;
 import mediahand.repository.base.Database;
 import mediahand.utils.MessageUtil;
 
@@ -36,7 +37,7 @@ public class MediaHandApp extends Application {
         MediaHandApp.stage = stage;
         MediaHandApp.mediaLoader = new MediaLoader();
 
-        initDatabase();
+        validateBasePath();
 
         initRootLayout();
 
@@ -47,36 +48,34 @@ public class MediaHandApp extends Application {
 
     @Override
     public void stop() {
-        mediaHandAppController.stopControllerListener();
+        MediaHandApp.mediaHandAppController.stopControllerListener();
         int width = (int) MediaHandApp.stage.getWidth();
         int height = (int) MediaHandApp.stage.getHeight();
         this.settingsEntry.setWindowWidth(width);
         this.settingsEntry.setWindowHeight(height);
-        this.settingsEntry.setAutoContinue(mediaHandAppController.autoContinueCheckbox.isSelected());
-        this.settingsEntry.setShowAll(mediaHandAppController.showAllCheckbox.isSelected());
-        this.settingsEntry.setWatchState(WatchState.lookupByName(mediaHandAppController.watchStateFilter.getSelectionModel().getSelectedItem()));
-        Database.getSettingsRepository().update(this.settingsEntry);
+        this.settingsEntry.setAutoContinue(MediaHandApp.mediaHandAppController.autoContinueCheckbox.isSelected());
+        this.settingsEntry.setShowAll(MediaHandApp.mediaHandAppController.showAllCheckbox.isSelected());
+        this.settingsEntry.setWatchState(WatchState.lookupByName(MediaHandApp.mediaHandAppController.watchStateFilter.getSelectionModel().getSelectedItem()));
+        RepositoryFactory.getSettingsRepository().update(this.settingsEntry);
     }
 
     private void initRootLayout() throws IOException {
         this.rootLayout = FXMLLoader.load(getClass().getResource("/fxml/RootLayout.fxml"));
         MediaHandApp.scene = new Scene(this.rootLayout);
-        setDefaultScene();
+        MediaHandApp.setDefaultScene();
 
-        this.settingsEntry = Database.getSettingsRepository().create(new SettingsEntry("default", 1200, 800, false, false, null));
+        this.settingsEntry = RepositoryFactory.getSettingsRepository().create(new SettingsEntry("default", 1200, 800, false, false, null));
         MediaHandApp.stage.setWidth(this.settingsEntry.getWindowWidth());
         MediaHandApp.stage.setHeight(this.settingsEntry.getWindowHeight());
 
         MediaHandApp.stage.show();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(Database::closeConnections));
+        Runtime.getRuntime().addShutdownHook(new Thread(Database.getInstance()::closeConnections));
     }
 
-    private void initDatabase() {
-        Database.init("AnimeDatabase", "lueko", "1234", false);
-
-        if (Database.getBasePathRepository().findAll().size() == 0) {
-            addBasePath();
+    private void validateBasePath() {
+        if (RepositoryFactory.getBasePathRepository().findAll().size() == 0) {
+            MediaHandApp.addBasePath();
         }
     }
 
@@ -86,32 +85,32 @@ public class MediaHandApp extends Application {
             loader.setLocation(MediaHandApp.class.getResource("/fxml/mediaHandApp.fxml"));
             this.rootLayout.setCenter(loader.load());
             MediaHandApp.mediaHandAppController = loader.getController();
-            mediaHandAppController.init(); // TODO [lueko]: add scene as parameter and make scene non-static
+            MediaHandApp.mediaHandAppController.init(); // TODO [lueko]: add scene as parameter and make scene non-static
         } catch (IOException e) {
             MessageUtil.warningAlert(e);
         }
     }
 
     private void applyFilterSettings() {
-        mediaHandAppController.autoContinueCheckbox.setSelected(this.settingsEntry.isAutoContinue());
-        mediaHandAppController.showAllCheckbox.setSelected(this.settingsEntry.isShowAll());
-        mediaHandAppController.watchStateFilter.getSelectionModel().select(this.settingsEntry.getWatchStateValue());
-        mediaHandAppController.onFilter();
+        MediaHandApp.mediaHandAppController.autoContinueCheckbox.setSelected(this.settingsEntry.isAutoContinue());
+        MediaHandApp.mediaHandAppController.showAllCheckbox.setSelected(this.settingsEntry.isShowAll());
+        MediaHandApp.mediaHandAppController.watchStateFilter.getSelectionModel().select(this.settingsEntry.getWatchStateValue());
+        MediaHandApp.mediaHandAppController.onFilter();
     }
 
     public static void setDefaultScene() {
         MediaHandApp.stage.setScene(MediaHandApp.scene);
         MediaHandApp.stage.setTitle(MediaHandApp.MEDIA_HAND_TITLE);
-        if (mediaHandAppController != null) {
-            mediaHandAppController.startControllerListener();
+        if (MediaHandApp.mediaHandAppController != null) {
+            MediaHandApp.mediaHandAppController.startControllerListener();
         }
     }
 
     public static boolean addBasePath() {
-        Optional<File> baseDir = chooseMediaDirectory();
+        Optional<File> baseDir = MediaHandApp.chooseMediaDirectory();
 
         if (baseDir.isPresent()) {
-            MediaHandApp.mediaLoader.addMedia(Database.getBasePathRepository().create(new DirectoryEntry(baseDir.get().getAbsolutePath())));
+            MediaHandApp.mediaLoader.addMedia(RepositoryFactory.getBasePathRepository().create(new DirectoryEntry(baseDir.get().getAbsolutePath())));
             return true;
         }
         return false;
@@ -138,7 +137,7 @@ public class MediaHandApp extends Application {
      * @return the chosen directory
      */
     public static Optional<File> chooseMediaDirectory() {
-        return chooseMediaDirectory(null);
+        return MediaHandApp.chooseMediaDirectory(null);
     }
 
     public static MediaHandAppController getMediaHandAppController() {
@@ -150,10 +149,10 @@ public class MediaHandApp extends Application {
     }
 
     public static Stage getStage() {
-        return stage;
+        return MediaHandApp.stage;
     }
 
     public static Scene getScene() {
-        return scene;
+        return MediaHandApp.scene;
     }
 }

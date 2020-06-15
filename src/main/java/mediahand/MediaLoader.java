@@ -18,8 +18,8 @@ import mediahand.controller.MediaHandAppController;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.DirectoryEntry;
 import mediahand.domain.MediaEntry;
-import mediahand.repository.MediaRepository;
-import mediahand.repository.base.Database;
+import mediahand.repository.RepositoryFactory;
+import mediahand.repository.base.BaseRepository;
 import utils.Check;
 
 /**
@@ -37,7 +37,7 @@ public class MediaLoader {
      * Adds all media of every directory path in dirTable into the mediaTable.
      */
     public void addAllMedia() {
-        List<DirectoryEntry> basePaths = Database.getBasePathRepository().findAll();
+        List<DirectoryEntry> basePaths = RepositoryFactory.getBasePathRepository().findAll();
 
         for (DirectoryEntry path : basePaths) {
             addMedia(path);
@@ -76,13 +76,13 @@ public class MediaLoader {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.warn("Could not add media", e);
+                MediaLoader.LOGGER.warn("Could not add media", e);
             }
         }
     }
 
     public void addSingleMedia() {
-        DirectoryEntry basePath = Database.getBasePathRepository().findAll().get(0);
+        DirectoryEntry basePath = RepositoryFactory.getBasePathRepository().findAll().get(0);
         Optional<File> optionalDir = MediaHandApp.chooseMediaDirectory(Path.of(basePath.getPath()));
         if (optionalDir.isPresent()) {
             File dir = optionalDir.get();
@@ -99,7 +99,7 @@ public class MediaLoader {
      * @param newMediaEntry the {@link MediaEntry} to add
      */
     private void addSingleMedia(final MediaEntry newMediaEntry) {
-        MediaRepository mediaRepository = Database.getMediaRepository();
+        BaseRepository<MediaEntry> mediaRepository = RepositoryFactory.getMediaRepository();
         ObservableList<MediaEntry> mediaEntries = MediaHandAppController.getMediaEntries();
         FilteredList<MediaEntry> mediaEntryFilteredList = null;
         if (mediaEntries != null) {
@@ -121,11 +121,11 @@ public class MediaLoader {
     }
 
     public MediaEntry createTempMediaEntry(final Path mediaDirectory) {
-        List<DirectoryEntry> allBasePaths = Database.getBasePathRepository().findAll();
+        List<DirectoryEntry> allBasePaths = RepositoryFactory.getBasePathRepository().findAll();
         String basePath = mediaDirectory.getParent().getParent().toString();
         Optional<DirectoryEntry> optionalBasePath = allBasePaths.stream().filter(directoryEntry -> directoryEntry.getPath().equals(basePath)).findFirst();
         if (optionalBasePath.isEmpty()) {
-            optionalBasePath = Optional.of(Database.getBasePathRepository().create(new DirectoryEntry(basePath)));
+            optionalBasePath = Optional.of(RepositoryFactory.getBasePathRepository().create(new DirectoryEntry(basePath)));
         }
         String mediaTitle = mediaDirectory.getFileName().toString();
         int episodeNumber = getMediaCount(mediaDirectory.toFile());
@@ -147,7 +147,7 @@ public class MediaLoader {
                 WatchState.WANT_TO_WATCH, 0, relativePath, 0, null, 0, null, 0, basePath, 50, null, null);
     }
 
-    private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
+    private void updateMediaEntryEpisodes(final MediaEntry newMediaEntry, final BaseRepository<MediaEntry> mediaRepository, final MediaEntry mediaEntry) {
         mediaEntry.setEpisodeNumber(newMediaEntry.getEpisodeNumber());
         if (mediaEntry.getCurrentEpisodeNumber() > mediaEntry.getEpisodeNumber()) {
             mediaEntry.setCurrentEpisodeNumber(mediaEntry.getEpisodeNumber());
@@ -155,11 +155,11 @@ public class MediaLoader {
         mediaRepository.update(mediaEntry);
     }
 
-    private void updateMediaEntry(final MediaEntry mediaEntry, final MediaRepository mediaRepository) {
+    private void updateMediaEntry(final MediaEntry mediaEntry, final BaseRepository<MediaEntry> mediaRepository) {
         mediaRepository.update(mediaEntry);
     }
 
-    public void updateMediaEntry(final MediaEntry newMediaEntry, final MediaRepository mediaRepository, final MediaEntry mediaEntry) {
+    public void updateMediaEntry(final MediaEntry newMediaEntry, final BaseRepository<MediaEntry> mediaRepository, final MediaEntry mediaEntry) {
         mediaEntry.setTitle(newMediaEntry.getTitle());
         mediaEntry.setBasePath(newMediaEntry.getBasePath());
         mediaEntry.setPath(newMediaEntry.getPath());

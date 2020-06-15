@@ -37,7 +37,7 @@ import javafx.scene.transform.Affine;
 import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
-import mediahand.repository.base.Database;
+import mediahand.repository.RepositoryFactory;
 import mediahand.vlc.event.StopRenderingSceneHandler;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -54,7 +54,7 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
 public class JavaFXDirectRenderingScene {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaFXDirectRenderingScene.class);
-    
+
     private static final double FPS = 60.0;
 
     private static final long DELAY = 1000;
@@ -284,7 +284,7 @@ public class JavaFXDirectRenderingScene {
         stopTimer();
         this.timer.cancel();
 
-        Database.getMediaRepository().update(this.mediaEntry);
+        RepositoryFactory.getMediaRepository().update(this.mediaEntry);
 
         this.mediaPlayer.controls().stop();
         this.mediaPlayer.release();
