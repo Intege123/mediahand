@@ -1,4 +1,4 @@
-package mediahand.vlc;
+package mediahand.vlc.customRenderer;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -39,6 +39,7 @@ import javafx.stage.Stage;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.RepositoryFactory;
+import mediahand.vlc.MediaPlayerComponent;
 import mediahand.vlc.event.StopRenderingSceneHandler;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;

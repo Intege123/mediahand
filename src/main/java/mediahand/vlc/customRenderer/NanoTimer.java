@@ -17,7 +17,7 @@
  * Copyright 2009, 2010, 2011, 2012, 2013, 2014, 2015 Caprica Software Limited.
  */
 
-package mediahand.vlc;
+package mediahand.vlc.customRenderer;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;

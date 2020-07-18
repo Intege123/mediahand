@@ -3,6 +3,14 @@ package mediahand.vlc;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.studiohartman.jamepad.ControllerButton;
+import com.studiohartman.jamepad.ControllerIndex;
+import com.studiohartman.jamepad.ControllerManager;
+import com.studiohartman.jamepad.ControllerUnpluggedException;
+
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -18,7 +26,9 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 
 public class ControlPane implements MediaPlayerComponent {
 
-    private static final long DELAY = 1000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControlPane.class);
+
+    private static final long TIME_SLIDER_DELAY = 1000;
 
     private final BorderPane borderPane;
 
@@ -30,12 +40,17 @@ public class ControlPane implements MediaPlayerComponent {
 
     private Timer timer = new Timer();
 
+    private ControllerIndex currentController;
+
+    private boolean isRunning;
+
     public ControlPane(final EmbeddedMediaPlayer embeddedMediaPlayer, final Scene scene) {
         this.borderPane = new BorderPane();
         this.embeddedMediaPlayer = embeddedMediaPlayer;
 
-        registerTimeListener();
-        registerKeyControlListeners(scene);
+        initControllerControl();
+        addTimeListener();
+        addKeyControlListeners(scene);
     }
 
     public BorderPane getBorderPane() {
@@ -46,19 +61,82 @@ public class ControlPane implements MediaPlayerComponent {
         this.mediaEntry = mediaEntry;
         double mediaDuration = this.embeddedMediaPlayer.media().info().duration() / 60000.0;
         BorderPane sliderPane = initSliderPane(mediaDuration);
-        showTimedTimeSlider(ControlPane.DELAY * 3);
+        showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY * 3);
 
         this.borderPane.setBottom(sliderPane);
     }
 
-    private void registerKeyControlListeners(final Scene scene) {
+    private void initControllerControl() {
+        ControllerManager controllerManager = new ControllerManager();
+        controllerManager.initSDLGamepad();
+        this.currentController = controllerManager.getControllerIndex(0);
+        Thread thread = new Thread(() -> {
+            this.isRunning = true;
+            while (this.isRunning) {
+                controllerManager.update();
+                try {
+                    if (this.currentController.isButtonJustPressed(ControllerButton.B)) {
+                        this.embeddedMediaPlayer.controls().pause();
+                        TimerTask timerTask = showTimeSlider();
+                        this.timer = new Timer();
+                        this.timer.schedule(timerTask, ControlPane.TIME_SLIDER_DELAY * 3);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.RIGHTBUMPER)) {
+                        Platform.runLater(this::playNextEpisode);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.LEFTBUMPER)) {
+                        Platform.runLater(this::playPreviousEpisode);
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.X)) {
+                        Platform.runLater(() -> this.embeddedMediaPlayer.controls().skipTime(80000));
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.BACK)) {
+                        Platform.runLater(() -> {
+                            stop();
+                            MediaHandApp.setDefaultScene();
+                        });
+                    }
+                    if (this.currentController.isButtonPressed(ControllerButton.DPAD_LEFT)) {
+                        showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
+                        if (this.currentController.isButtonPressed(ControllerButton.A)) {
+                            Platform.runLater(() -> this.embeddedMediaPlayer.controls().skipTime(-3000));
+                        } else {
+                            Platform.runLater(() -> this.embeddedMediaPlayer.controls().skipTime(-1000));
+                        }
+                    }
+                    if (this.currentController.isButtonPressed(ControllerButton.DPAD_RIGHT)) {
+                        showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
+                        if (this.currentController.isButtonPressed(ControllerButton.A)) {
+                            Platform.runLater(() -> this.embeddedMediaPlayer.controls().skipTime(3000));
+                        } else {
+                            Platform.runLater(() -> this.embeddedMediaPlayer.controls().skipTime(1000));
+                        }
+                    }
+                    if (this.currentController.isButtonJustPressed(ControllerButton.Y)) {
+                        Platform.runLater(() -> MediaHandApp.getStage().setFullScreen(!MediaHandApp.getStage().isFullScreen()));
+                    }
+                } catch (ControllerUnpluggedException e) {
+                    break;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    ControlPane.LOGGER.error("Controller thread: sleep", e);
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+        thread.start();
+    }
+
+    private void addKeyControlListeners(final Scene scene) {
         scene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
                 stop();
                 MediaHandApp.setDefaultScene();
             } else if (event.getCode() == KeyCode.SPACE) {
                 this.embeddedMediaPlayer.controls().pause();
-                showTimedTimeSlider(ControlPane.DELAY * 3);
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY * 3);
             } else if (event.getCode() == KeyCode.ENTER) {
                 this.embeddedMediaPlayer.controls().skipTime(80000);
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
@@ -72,11 +150,14 @@ public class ControlPane implements MediaPlayerComponent {
     }
 
     public void stop() {
+        this.isRunning = false;
         if (this.embeddedMediaPlayer.status().isPlaying()) {
             this.embeddedMediaPlayer.controls().stop();
         }
         this.timer.cancel();
-        RepositoryFactory.getMediaRepository().update(this.mediaEntry);
+        if (this.mediaEntry != null) {
+            RepositoryFactory.getMediaRepository().update(this.mediaEntry);
+        }
     }
 
     private void playSelectedMedia(boolean fullScreen) {
@@ -98,7 +179,7 @@ public class ControlPane implements MediaPlayerComponent {
         playSelectedMedia(fullScreen);
     }
 
-    private void registerTimeListener() {
+    private void addTimeListener() {
         this.embeddedMediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
             @Override
             public void timeChanged(uk.co.caprica.vlcj.player.base.MediaPlayer mediaPlayer, long newTime) {
@@ -128,11 +209,11 @@ public class ControlPane implements MediaPlayerComponent {
         Parent parent = this.borderPane.getParent();
         if (parent != null) {
             parent.setOnMouseMoved(event -> {
-                showTimedTimeSlider(ControlPane.DELAY);
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
                 TimerTask timerTask = showTimeSlider();
                 if (sliderPane.sceneToLocal(event.getSceneX(), event.getSceneY()).getY() < -10) {
                     this.timer = new Timer();
-                    this.timer.schedule(timerTask, ControlPane.DELAY);
+                    this.timer.schedule(timerTask, ControlPane.TIME_SLIDER_DELAY);
                 }
             });
         } else {

@@ -8,9 +8,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurfaceFactory;
-import uk.co.caprica.vlcj.player.base.ControlsApi;
 import uk.co.caprica.vlcj.player.base.EventApi;
-import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 
 public class JavaFxMediaPlayer implements MediaPlayerComponent {
@@ -28,9 +26,6 @@ public class JavaFxMediaPlayer implements MediaPlayerComponent {
     public JavaFxMediaPlayer() {
         this.mediaPlayerFactory = new MediaPlayerFactory();
         this.embeddedMediaPlayer = this.mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
-        this.embeddedMediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
-
-        });
         this.imageView = new ImageView();
         this.imageView.setPreserveRatio(true);
         this.embeddedMediaPlayer.videoSurface().set(ImageViewVideoSurfaceFactory.videoSurfaceForImageView(this.imageView));
@@ -41,10 +36,6 @@ public class JavaFxMediaPlayer implements MediaPlayerComponent {
 
     public Scene getScene() {
         return this.scene;
-    }
-
-    public ControlsApi controls() {
-        return this.embeddedMediaPlayer.controls();
     }
 
     public EventApi events() {

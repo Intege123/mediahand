@@ -75,21 +75,7 @@ public class MediaHandAppController {
     private MediaPlayerContextMenu mediaPlayerContextMenu;
 
     public void init() {
-        this.javaFxMediaPlayer = new JavaFxMediaPlayer();
-        this.javaFxMediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
-            @Override
-            public void finished(MediaPlayer mediaPlayer) {
-                Platform.runLater(MediaHandAppController.this::onMediaFinished);
-            }
-        });
-
-        StackPane stackPane = this.javaFxMediaPlayer.getStackPane();
-        this.mediaPlayerContextMenu = new MediaPlayerContextMenu(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), stackPane);
-        this.controlPane = new ControlPane(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), this.javaFxMediaPlayer.getScene());
-        stackPane.getChildren().add(this.controlPane.getBorderPane());
-
-        MediaHandApp.getStage().setOnCloseRequest(new StopRenderingSceneHandler(List.of(this.controlPane, this.javaFxMediaPlayer)));
-        MediaHandApp.getStage().setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+        initMediaPlayer();
 
         startControllerListener();
         addWatchStateFilter();
@@ -282,6 +268,24 @@ public class MediaHandAppController {
                 changeMediaLocation();
             }
         }
+    }
+
+    private void initMediaPlayer() {
+        this.javaFxMediaPlayer = new JavaFxMediaPlayer();
+        this.javaFxMediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                Platform.runLater(MediaHandAppController.this::onMediaFinished);
+            }
+        });
+
+        StackPane stackPane = this.javaFxMediaPlayer.getStackPane();
+        this.mediaPlayerContextMenu = new MediaPlayerContextMenu(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), stackPane);
+        this.controlPane = new ControlPane(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), this.javaFxMediaPlayer.getScene());
+        stackPane.getChildren().add(this.controlPane.getBorderPane());
+
+        MediaHandApp.getStage().setOnCloseRequest(new StopRenderingSceneHandler(List.of(this.controlPane, this.javaFxMediaPlayer)));
+        MediaHandApp.getStage().setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
     }
 
     private void playMedia() {
