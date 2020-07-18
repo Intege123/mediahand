@@ -1,20 +1,24 @@
 package mediahand.vlc.event;
 
+import java.util.List;
+
 import javafx.event.EventHandler;
 import javafx.stage.WindowEvent;
-import mediahand.vlc.JavaFXDirectRenderingScene;
+import mediahand.vlc.MediaPlayerComponent;
 
 public class StopRenderingSceneHandler implements EventHandler<WindowEvent> {
 
-    private JavaFXDirectRenderingScene javaFXDirectRenderingScene;
+    private final List<MediaPlayerComponent> mediaPlayerComponents;
 
-    public StopRenderingSceneHandler(final JavaFXDirectRenderingScene javaFXDirectRenderingScene) {
-        this.javaFXDirectRenderingScene = javaFXDirectRenderingScene;
+    public StopRenderingSceneHandler(final List<MediaPlayerComponent> mediaPlayerComponents) {
+        this.mediaPlayerComponents = mediaPlayerComponents;
     }
 
     @Override
     public void handle(WindowEvent event) {
-        this.javaFXDirectRenderingScene.stop();
+        for (MediaPlayerComponent mediaPlayerComponent : this.mediaPlayerComponents) {
+            mediaPlayerComponent.stop();
+        }
     }
 
 }

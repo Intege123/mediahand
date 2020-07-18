@@ -2,6 +2,7 @@ package mediahand.vlc;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,7 +52,7 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCall
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
-public class JavaFXDirectRenderingScene {
+public class JavaFXDirectRenderingScene implements MediaPlayerComponent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaFXDirectRenderingScene.class);
 
@@ -261,7 +262,7 @@ public class JavaFXDirectRenderingScene {
     private void initStage(Stage primaryStage, String title) {
         this.stage = primaryStage;
 
-        this.stage.setOnCloseRequest(new StopRenderingSceneHandler(this));
+        this.stage.setOnCloseRequest(new StopRenderingSceneHandler(List.of(this)));
 
         this.stage.setTitle(title);
 

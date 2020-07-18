@@ -112,6 +112,9 @@ public class MediaLoader {
             MediaEntry mediaEntry = mediaEntryFilteredList.get(0);
             if (!mediaEntry.isAvailable()) {
                 mediaEntry.setBasePath(newMediaEntry.getBasePath());
+                mediaEntry.setPath(newMediaEntry.getPath());
+                mediaEntry.setMediaType(newMediaEntry.getMediaType());
+                mediaEntry.setEpisodeNumber(newMediaEntry.getEpisodeNumber());
                 mediaEntry.setAvailable(true);
                 updateMediaEntry(mediaEntry, mediaRepository);
             } else {

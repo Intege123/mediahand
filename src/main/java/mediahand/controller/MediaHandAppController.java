@@ -30,13 +30,21 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
 import mediahand.WatchState;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.RepositoryFactory;
 import mediahand.utils.MessageUtil;
-import mediahand.vlc.JavaFXDirectRenderingScene;
+import mediahand.vlc.ControlPane;
+import mediahand.vlc.JavaFxMediaPlayer;
+import mediahand.vlc.MediaPlayerContextMenu;
+import mediahand.vlc.event.StopRenderingSceneHandler;
+import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
 public class MediaHandAppController {
 
@@ -62,7 +70,27 @@ public class MediaHandAppController {
 
     private boolean isRunning;
 
+    private JavaFxMediaPlayer javaFxMediaPlayer;
+    private ControlPane controlPane;
+    private MediaPlayerContextMenu mediaPlayerContextMenu;
+
     public void init() {
+        this.javaFxMediaPlayer = new JavaFxMediaPlayer();
+        this.javaFxMediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                Platform.runLater(MediaHandAppController.this::onMediaFinished);
+            }
+        });
+
+        StackPane stackPane = this.javaFxMediaPlayer.getStackPane();
+        this.mediaPlayerContextMenu = new MediaPlayerContextMenu(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), stackPane);
+        this.controlPane = new ControlPane(this.javaFxMediaPlayer.getEmbeddedMediaPlayer(), this.javaFxMediaPlayer.getScene());
+        stackPane.getChildren().add(this.controlPane.getBorderPane());
+
+        MediaHandApp.getStage().setOnCloseRequest(new StopRenderingSceneHandler(List.of(this.controlPane, this.javaFxMediaPlayer)));
+        MediaHandApp.getStage().setFullScreenExitKeyCombination(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+
         startControllerListener();
         addWatchStateFilter();
         addTitleFieldFilterListener();
@@ -118,6 +146,18 @@ public class MediaHandAppController {
             }
         });
         fillTableView(RepositoryFactory.getMediaRepository().findAll());
+    }
+
+    public void onMediaFinished() {
+        this.controlPane.stop();
+        boolean fullScreen = MediaHandApp.getStage().isFullScreen();
+        increaseCurrentEpisode();
+        if (this.autoContinueCheckbox.isSelected()) {
+            playEmbeddedMedia();
+            MediaHandApp.getStage().setFullScreen(fullScreen);
+        } else {
+            MediaHandApp.setDefaultScene();
+        }
     }
 
     public void startControllerListener() {
@@ -223,10 +263,20 @@ public class MediaHandAppController {
         } else {
             try {
                 File file = MediaHandApp.getMediaLoader().getEpisode(selectedItem.getAbsolutePath(), selectedItem.getCurrentEpisodeNumber());
-                JavaFXDirectRenderingScene javaFXDirectRenderingScene = new JavaFXDirectRenderingScene(file, selectedItem);
+
                 String windowTitle = selectedItem.getTitle() + " : Episode " + selectedItem.getCurrentEpisodeNumber();
                 this.isRunning = false;
-                javaFXDirectRenderingScene.start(MediaHandApp.getStage(), windowTitle);
+
+                MediaHandApp.getStage().setTitle(windowTitle);
+                MediaHandApp.getStage().setScene(this.javaFxMediaPlayer.getScene());
+
+                if (this.javaFxMediaPlayer.start(file)) {
+                    this.controlPane.update(selectedItem);
+                    this.mediaPlayerContextMenu.update(selectedItem);
+                } else {
+                    MessageUtil.warningAlert("Play embedded media failed",
+                            "Could not play selected entry " + selectedItem.getTitle());
+                }
             } catch (IOException e) {
                 MessageUtil.warningAlert(e);
                 changeMediaLocation();
