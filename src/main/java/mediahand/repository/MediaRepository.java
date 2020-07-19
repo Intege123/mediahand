@@ -116,7 +116,7 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         try (ResultSet result = Database.getInstance().getStatement().executeQuery(
                 "SELECT MEDIATABLE.ID, TITLE, EPISODES, MEDIATYPE, WATCHSTATE, "
                         + "RATING, MEDIATABLE.PATH, CURRENTEPISODE, ADDED, EPISODELENGTH, WATCHEDDATE, WATCHNUMBER, VOLUME, AUDIOTRACK, SUBTITLETRACK, "
-                        + "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE, DIRTABLE "
+                        + "DIRTABLE_FK, DIRTABLE.ID AS dirtable_id, DIRTABLE.PATH AS dirtable_path FROM MEDIATABLE LEFT JOIN DIRTABLE ON MEDIATABLE.DIRTABLE_FK = DIRTABLE.ID "
                         + "WHERE TITLE = '" + entry.getTitle() + "'")) {
             if (result.next()) {
                 String dirtable_path = result.getString("dirtable_path");

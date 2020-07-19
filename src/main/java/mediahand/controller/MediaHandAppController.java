@@ -25,6 +25,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -66,6 +67,8 @@ public class MediaHandAppController {
     public ComboBox<Integer> episodeEdit;
     public Label selectedMediaTitle;
 
+    public TableColumn<MediaEntry, String> title;
+
     private ControllerIndex currentController;
 
     private boolean isRunning;
@@ -80,6 +83,16 @@ public class MediaHandAppController {
         startControllerListener();
         addWatchStateFilter();
         addTitleFieldFilterListener();
+        this.title.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(item);
+                if (item != null) {
+                    setTooltip(new Tooltip(RepositoryFactory.getMediaRepository().find(new MediaEntry(item)).getAbsolutePath()));
+                }
+            }
+        });
         this.watchStateEdit.setItems(FXCollections.observableArrayList(WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
         this.ratingEdit.setItems(FXCollections.observableArrayList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         this.mediaTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {

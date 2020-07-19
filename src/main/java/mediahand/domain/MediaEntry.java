@@ -94,6 +94,10 @@ public class MediaEntry {
      */
     private String subtitleTrack;
 
+    public MediaEntry(String title) {
+        this(0, title, 0, null, null, 0, null, 0, null, 0, null, 0, null, 0, null, null);
+    }
+
     public MediaEntry(int id, String title, int episodeNumber, String mediaType, WatchState watchState, int rating, String path, int currentEpisode, LocalDate added, int episodeLength, LocalDate watchedDate, int watchedCount, DirectoryEntry basePath, int volume, String audioTrack, String subtitleTrack) {
         Check.notNullArgument(title, "title");
 
@@ -129,7 +133,7 @@ public class MediaEntry {
         if (this.basePath != null) {
             return this.getBasePath().getPath() + this.path;
         } else {
-            return this.path;
+            return Objects.requireNonNullElse(this.path, "");
         }
     }
 
