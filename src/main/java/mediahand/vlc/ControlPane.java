@@ -12,11 +12,15 @@ import com.studiohartman.jamepad.ControllerManager;
 import com.studiohartman.jamepad.ControllerUnpluggedException;
 
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import mediahand.core.MediaHandApp;
 import mediahand.domain.MediaEntry;
 import mediahand.repository.RepositoryFactory;
@@ -43,6 +47,7 @@ public class ControlPane implements MediaPlayerComponent {
     private ControllerIndex currentController;
 
     private boolean isRunning;
+    private Slider volumeSlider;
 
     public ControlPane(final EmbeddedMediaPlayer embeddedMediaPlayer, final Scene scene) {
         this.borderPane = new BorderPane();
@@ -77,9 +82,7 @@ public class ControlPane implements MediaPlayerComponent {
                 try {
                     if (this.currentController.isButtonJustPressed(ControllerButton.B)) {
                         this.embeddedMediaPlayer.controls().pause();
-                        TimerTask timerTask = showTimeSlider();
-                        this.timer = new Timer();
-                        this.timer.schedule(timerTask, ControlPane.TIME_SLIDER_DELAY * 3);
+                        showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY * 3);
                     }
                     if (this.currentController.isButtonJustPressed(ControllerButton.RIGHTBUMPER)) {
                         Platform.runLater(this::playNextEpisode);
@@ -139,12 +142,28 @@ public class ControlPane implements MediaPlayerComponent {
                 showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY * 3);
             } else if (event.getCode() == KeyCode.ENTER) {
                 this.embeddedMediaPlayer.controls().skipTime(80000);
+                updateMediaTimeSlider(this.embeddedMediaPlayer.status().time());
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
             } else if (!event.isControlDown() && event.getCode() == KeyCode.F) {
                 MediaHandApp.getStage().setFullScreen(true);
             } else if (event.getCode() == KeyCode.UP) {
                 playNextEpisode();
             } else if (event.getCode() == KeyCode.DOWN) {
                 playPreviousEpisode();
+            } else if (event.getCode() == KeyCode.PLUS || event.getCode() == KeyCode.ADD) {
+                this.volumeSlider.setValue(this.volumeSlider.getValue() + 5);
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
+            } else if (event.getCode() == KeyCode.MINUS || event.getCode() == KeyCode.SUBTRACT) {
+                this.volumeSlider.setValue(this.volumeSlider.getValue() - 5);
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
+            } else if (event.getCode() == KeyCode.NUMPAD6) {
+                this.embeddedMediaPlayer.controls().skipTime(2000);
+                updateMediaTimeSlider(this.embeddedMediaPlayer.status().time());
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
+            } else if (event.getCode() == KeyCode.NUMPAD4) {
+                this.embeddedMediaPlayer.controls().skipTime(-2000);
+                updateMediaTimeSlider(this.embeddedMediaPlayer.status().time());
+                showTimedTimeSlider(ControlPane.TIME_SLIDER_DELAY);
             }
         });
     }
@@ -196,10 +215,21 @@ public class ControlPane implements MediaPlayerComponent {
 
     private BorderPane initSliderPane(final double mediaDuration) {
         this.mediaTimeSlider = initMediaTimeSlider(mediaDuration);
-        Slider volumeSlider = initVolumeSlider(this.mediaEntry.getVolume());
+        this.volumeSlider = initVolumeSlider(this.mediaEntry.getVolume());
 
-        BorderPane sliderPane = new BorderPane(this.mediaTimeSlider);
-        sliderPane.setRight(volumeSlider);
+        String length = ((int) (mediaDuration / 1) + ":" + (int) ((mediaDuration % 1) * 60));
+        Label currentTimeLabel = new Label(length);
+        currentTimeLabel.setTextFill(Color.YELLOW);
+        this.mediaTimeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            currentTimeLabel.setText(
+                    (int) (newValue.doubleValue() / 1) + ":" + (int) ((newValue.doubleValue() % 1) * 60) + " - "
+                            + length);
+        });
+        VBox vBox = new VBox(this.mediaTimeSlider, currentTimeLabel);
+        vBox.setPadding(new Insets(3, 0, 5, 5));
+
+        BorderPane sliderPane = new BorderPane(vBox);
+        sliderPane.setRight(this.volumeSlider);
 
         registerControlPaneMouseListener(sliderPane);
         return sliderPane;
@@ -223,9 +253,8 @@ public class ControlPane implements MediaPlayerComponent {
 
     private Slider initMediaTimeSlider(final double mediaDuration) {
         Slider slider = new Slider(0, mediaDuration, 0);
-        slider.setMajorTickUnit(mediaDuration);
-        slider.setShowTickLabels(true);
-        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(false);
+        slider.setShowTickMarks(false);
         slider.setOnMouseClicked(event -> this.embeddedMediaPlayer.controls().setTime((long) (slider.getValue()
                 * 60000)));
         return slider;
@@ -239,7 +268,10 @@ public class ControlPane implements MediaPlayerComponent {
             this.embeddedMediaPlayer.audio().setVolume(newVolume);
             this.mediaEntry.setVolume(newVolume);
         });
-        volumeSlider.valueProperty().addListener((observable, oldValue, newValue) -> this.embeddedMediaPlayer.audio().setVolume(newValue.intValue()));
+        volumeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            this.embeddedMediaPlayer.audio().setVolume(newValue.intValue());
+            this.mediaEntry.setVolume(newValue.intValue());
+        });
         return volumeSlider;
     }
 
