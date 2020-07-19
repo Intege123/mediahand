@@ -21,7 +21,6 @@ public class SettingsEntry {
 
     private WatchState watchState;
 
-
     public SettingsEntry(String profile, int windowWidth, int windowHeight, boolean autoContinue, boolean showAll, WatchState watchState) {
         this(0, profile, windowWidth, windowHeight, autoContinue, showAll, watchState);
     }

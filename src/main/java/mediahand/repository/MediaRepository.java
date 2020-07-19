@@ -5,7 +5,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,4 +176,20 @@ public class MediaRepository implements BaseRepository<MediaEntry> {
         }
         return mediaEntries;
     }
+
+    public Set<String> findAllMediaTypes() {
+        Set<String> types = new HashSet<>();
+
+        try (ResultSet result = Database.getInstance().getStatement().executeQuery(
+                "SELECT DISTINCT MEDIATYPE FROM MEDIATABLE")) {
+            while (result.next()) {
+                types.add(result.getString("MEDIATYPE"));
+            }
+        } catch (SQLException e) {
+            MediaRepository.LOGGER.error("findAllMediaTypes", e);
+        }
+
+        return types;
+    }
+
 }

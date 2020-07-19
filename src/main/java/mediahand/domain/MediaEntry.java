@@ -137,6 +137,14 @@ public class MediaEntry {
         }
     }
 
+    public boolean filterByWatchState(final String watchState) {
+        return watchState.equals("ALL") || watchState.equals(this.watchState.toString());
+    }
+
+    public boolean filterByMediaType(final String mediaType) {
+        return mediaType.equals("All") || mediaType.equals(this.mediaType);
+    }
+
     public int getId() {
         return this.id;
     }
@@ -247,10 +255,6 @@ public class MediaEntry {
 
     public void setAvailable(boolean available) {
         this.available = available;
-    }
-
-    public boolean filterByWatchState(final String watchState) {
-        return watchState.equals("ALL") || watchState.equals(this.watchState.toString());
     }
 
     public int getVolume() {

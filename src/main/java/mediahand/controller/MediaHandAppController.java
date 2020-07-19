@@ -58,6 +58,7 @@ public class MediaHandAppController {
 
     public TextField titleFilter;
     public ComboBox<String> watchStateFilter;
+    public ComboBox<String> typeFilter;
     public CheckBox showAllCheckbox;
     public CheckBox autoContinueCheckbox;
 
@@ -82,6 +83,7 @@ public class MediaHandAppController {
 
         startControllerListener();
         addWatchStateFilter();
+        addMediaTypeFilter();
         addTitleFieldFilterListener();
         this.title.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -224,7 +226,14 @@ public class MediaHandAppController {
 
     private void addWatchStateFilter() {
         this.watchStateFilter.setItems(FXCollections.observableArrayList("ALL", WatchState.WANT_TO_WATCH.toString(), WatchState.DOWNLOADING.toString(), WatchState.WATCHED.toString(), WatchState.WATCHING.toString(), WatchState.REWATCHING.toString()));
-        this.watchStateFilter.getSelectionModel().selectFirst();
+        this.watchStateFilter.getSelectionModel().select("ALL");
+    }
+
+    private void addMediaTypeFilter() {
+        List<String> mediaTypes = new ArrayList<>(RepositoryFactory.getMediaRepository().findAllMediaTypes());
+        mediaTypes.add(0, "All");
+        this.typeFilter.setItems(FXCollections.observableArrayList(mediaTypes));
+        this.typeFilter.getSelectionModel().select("All");
     }
 
     public void onPlayEnter(KeyEvent keyEvent) {
@@ -377,7 +386,8 @@ public class MediaHandAppController {
 
     private boolean filter(final MediaEntry mediaEntry, final String textFilter) {
         if ((this.showAllCheckbox.isSelected() || mediaEntry.isAvailable())
-                && mediaEntry.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem())) {
+                && mediaEntry.filterByWatchState(this.watchStateFilter.getSelectionModel().getSelectedItem())
+                && mediaEntry.filterByMediaType(this.typeFilter.getSelectionModel().getSelectedItem())) {
             if (textFilter == null || textFilter.isEmpty()) {
                 return true;
             }
