@@ -1,6 +1,6 @@
 # MediaHand
 
-Note: This project is not maintained anymore. The replacement can be found here: https://github.com/Intege123/MediaHand_Spring
+Note: This project is no longer maintained. See https://github.com/Intege123/MediaHand_Spring instead.
 
 JavaFX based application to manage movies, series and other types of media. 
 Uses the file-based HSQLDB to save media information. 
